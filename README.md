@@ -1,4 +1,4 @@
-# CosmosMapper
+# Cosmos Mapper
 
 <p align="left">
   <img src="logo.svg" alt="CosmosMapper Logo" width="200">
