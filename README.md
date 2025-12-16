@@ -41,14 +41,10 @@ Edit `.env` with your settings:
 ```env
 # Option 1: Key-based authentication
 COSMOS_ENDPOINT=https://your-account.azure.com:443/
-COSMOS_KEY=your-primary-key [Read Only suggested]
+COSMOS_KEY=your-primary-key [Read Only supported and strongly suggested]
 
 # Option 2: Azure AD / Managed Identity
 # Just set COSMOS_ENDPOINT and leave COSMOS_KEY empty
-
-# Databases to document
-TENANT_DATABASE=your-tenant-db
-PLATFORM_DATABASE=your-platform-db
 
 # Optional: Documents to sample per container (default: 100)
 SAMPLE_SIZE=100
