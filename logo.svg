@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240">
+  <defs>
+    <radialGradient id="cosmicBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#0d1033"/>
+      <stop offset="100%" style="stop-color:#060610"/>
+    </radialGradient>
+    <filter id="starGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Smaller background circle -->
+  <circle cx="100" cy="90" r="65" fill="url(#cosmicBg)" stroke="#1a1a3c" stroke-width="1"/>
+
+  <!-- Distant stars (inside circle) -->
+  <g fill="#ffffff" opacity="0.2">
+    <circle cx="55" cy="55" r="0.5"/>
+    <circle cx="140" cy="60" r="0.4"/>
+    <circle cx="70" cy="125" r="0.5"/>
+    <circle cx="130" cy="120" r="0.4"/>
+    <circle cx="95" cy="45" r="0.5"/>
+    <circle cx="115" cy="75" r="0.3"/>
+    <circle cx="60" cy="90" r="0.4"/>
+    <circle cx="135" cy="95" r="0.5"/>
+    <circle cx="85" cy="135" r="0.4"/>
+    <circle cx="110" cy="50" r="0.4"/>
+  </g>
+
+  <!-- Cassiopeia constellation lines -->
+  <g stroke="#7799cc" stroke-width="1" opacity="0.6" stroke-linecap="round">
+    <!-- Segin to Ruchbah -->
+    <line x1="20" y1="40" x2="55" y2="80"/>
+    <!-- Ruchbah to Navi -->
+    <line x1="55" y1="80" x2="100" y2="60"/>
+    <!-- Navi to Schedar -->
+    <line x1="100" y1="60" x2="140" y2="115"/>
+    <!-- Schedar to Caph -->
+    <line x1="140" y1="115" x2="180" y2="85"/>
+  </g>
+
+  <!-- Cassiopeia stars - outer ones break the circle -->
+  <g filter="url(#starGlow)">
+    <!-- Segin (ε) - TOP LEFT, OUTSIDE circle -->
+    <circle cx="20" cy="40" r="7" fill="#aaccff" opacity="0.5"/>
+    <circle cx="20" cy="40" r="4.5" fill="#ddeeff"/>
+    <circle cx="20" cy="40" r="2.2" fill="#ffffff"/>
+
+    <!-- Ruchbah (δ) - inside -->
+    <circle cx="55" cy="80" r="5" fill="#aaccff" opacity="0.5"/>
+    <circle cx="55" cy="80" r="3.5" fill="#ddeeff"/>
+    <circle cx="55" cy="80" r="1.8" fill="#ffffff"/>
+
+    <!-- Navi/Gamma (γ) - center -->
+    <circle cx="100" cy="60" r="7" fill="#bbddff" opacity="0.6"/>
+    <circle cx="100" cy="60" r="5" fill="#eef6ff"/>
+    <circle cx="100" cy="60" r="2.5" fill="#ffffff"/>
+
+    <!-- Schedar (α) - bottom, brightest -->
+    <circle cx="140" cy="115" r="8" fill="#bbddff" opacity="0.6"/>
+    <circle cx="140" cy="115" r="5.5" fill="#eef6ff"/>
+    <circle cx="140" cy="115" r="2.8" fill="#ffffff"/>
+
+    <!-- Caph (β) - RIGHT, OUTSIDE circle -->
+    <circle cx="180" cy="85" r="7" fill="#aaccff" opacity="0.5"/>
+    <circle cx="180" cy="85" r="4.5" fill="#ddeeff"/>
+    <circle cx="180" cy="85" r="2.2" fill="#ffffff"/>
+  </g>
+
+  <!-- ERD-style dashed relationship lines -->
+  <g stroke="#6699bb" stroke-width="0.8" opacity="0.5" stroke-dasharray="3,3">
+    <!-- Cross-connection: Segin to Navi -->
+    <line x1="20" y1="40" x2="100" y2="60"/>
+    <!-- Cross-connection: Ruchbah to Caph -->
+    <line x1="55" y1="80" x2="180" y2="85"/>
+    <!-- Cross-connection: Navi to Caph -->
+    <line x1="100" y1="60" x2="180" y2="85"/>
+  </g>
+
+</svg>
