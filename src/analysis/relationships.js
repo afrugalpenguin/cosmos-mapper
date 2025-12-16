@@ -8,7 +8,6 @@
  * @typedef {Object} ContainerInfo
  * @property {string} name - Container name
  * @property {string} database - Database name
- * @property {string} databaseType - 'store' or 'platform'
  */
 
 /**
@@ -29,12 +28,11 @@
  * Detects relationships from a container's schema.
  * @param {string} containerName - Container being analysed
  * @param {string} databaseName - Database name
- * @param {string} databaseType - 'store' or 'platform'
  * @param {object} schema - Inferred schema for the container
  * @param {ContainerInfo[]} allContainers - All known containers
  * @returns {Relationship[]} Detected relationships
  */
-export function detectRelationships(containerName, databaseName, databaseType, schema, allContainers) {
+export function detectRelationships(containerName, databaseName, schema, allContainers) {
   const relationships = [];
   const properties = schema.properties || {};
 
@@ -47,11 +45,9 @@ export function detectRelationships(containerName, databaseName, databaseType, s
       const relationship = {
         fromContainer: containerName,
         fromDatabase: databaseName,
-        fromDatabaseType: databaseType,
         fromProperty: ref.propertyPath,
         toContainer: match?.name || ref.targetName,
         toDatabase: match?.database || null,
-        toDatabaseType: match?.databaseType || null,
         toProperty: 'id',
         cardinality: 'many-to-one',
         isCrossDatabase: match ? match.database !== databaseName : false,
@@ -177,11 +173,9 @@ export function invertRelationships(relationships) {
         ...rel,
         fromContainer: rel.toContainer,
         fromDatabase: rel.toDatabase,
-        fromDatabaseType: rel.toDatabaseType,
         fromProperty: 'id',
         toContainer: rel.fromContainer,
         toDatabase: rel.fromDatabase,
-        toDatabaseType: rel.fromDatabaseType,
         toProperty: rel.fromProperty,
         cardinality: 'one-to-many'
       });

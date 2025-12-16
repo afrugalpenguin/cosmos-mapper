@@ -40,15 +40,11 @@ Edit `.env` with your settings:
 
 ```env
 # Option 1: Key-based authentication
-COSMOS_ENDPOINT=https://your-account.documents.azure.com:443/
-COSMOS_KEY=your-primary-key
+COSMOS_ENDPOINT=https://your-account.azure.com:443/
+COSMOS_KEY=your-primary-key [Read Only supported and strongly suggested]
 
 # Option 2: Azure AD / Managed Identity
 # Just set COSMOS_ENDPOINT and leave COSMOS_KEY empty
-
-# Databases to document
-STORE_DATABASE=your-store-db
-PLATFORM_DATABASE=your-platform-db
 
 # Optional: Documents to sample per container (default: 100)
 SAMPLE_SIZE=100
@@ -114,6 +110,13 @@ Relationships are detected from:
 - Properties ending in `_id` (e.g., `product_id` → `categories`)
 - Nested objects with `Id` property (e.g., `Product.Id` → `categories`)
 - Reference pattern objects
+
+> **Note:** Unlike relational databases, Cosmos DB has no enforced foreign keys. Relationships shown in the ERD are **inferred from naming conventions**, not database constraints. Some detected relationships may be:
+> - Denormalised copies (embedded snapshots) rather than live references
+> - Pointing to containers with slightly different names than guessed
+> - Application-level conventions that don't represent true data relationships
+>
+> Always verify critical relationships against your application code or domain knowledge.
 
 ## Demo with Cosmos DB Emulator
 
