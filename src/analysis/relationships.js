@@ -22,6 +22,8 @@
  * @property {string} cardinality - 'many-to-one' or 'one-to-many'
  * @property {boolean} isCrossDatabase - Whether relationship crosses databases
  * @property {boolean} isOrphan - Whether target container exists
+ * @property {boolean} isAmbiguous - Whether multiple databases have the target container
+ * @property {string[]} possibleDatabases - All databases containing the target container
  */
 
 /**
@@ -40,7 +42,8 @@ export function detectRelationships(containerName, databaseName, schema, allCont
     const refs = findReferencesInProperty(prop, containerName);
 
     for (const ref of refs) {
-      const match = matchToContainer(ref.targetName, allContainers, containerName, databaseName);
+      const matchResult = matchToContainer(ref.targetName, allContainers, containerName, databaseName);
+      const match = matchResult.match;
 
       const relationship = {
         fromContainer: containerName,
@@ -51,7 +54,9 @@ export function detectRelationships(containerName, databaseName, schema, allCont
         toProperty: 'id',
         cardinality: 'many-to-one',
         isCrossDatabase: match ? match.database !== databaseName : false,
-        isOrphan: !match
+        isOrphan: !match,
+        isAmbiguous: matchResult.isAmbiguous,
+        possibleDatabases: matchResult.possibleDatabases
       };
 
       // Avoid duplicate relationships
@@ -106,8 +111,18 @@ function findReferencesInProperty(prop, sourceContainer) {
 }
 
 /**
+ * Match result with potential ambiguity information.
+ * @typedef {Object} MatchResult
+ * @property {ContainerInfo|null} match - The matched container (first found if ambiguous)
+ * @property {boolean} isAmbiguous - Whether multiple databases have this container
+ * @property {string[]} possibleDatabases - All databases containing a matching container
+ */
+
+/**
  * Attempts to match a reference name to an existing container.
  * Prefers same-database matches over cross-database matches.
+ * Returns ambiguity info when multiple databases have the same container name.
+ * @returns {MatchResult}
  */
 function matchToContainer(targetName, containers, sourceContainer, sourceDatabase) {
   const normalised = targetName.toLowerCase();
@@ -125,19 +140,31 @@ function matchToContainer(targetName, containers, sourceContainer, sourceDatabas
       c.name.toLowerCase() !== sourceContainer.toLowerCase() &&
       c.database === sourceDatabase
     );
-    if (match) return match;
+    if (match) {
+      return { match, isAmbiguous: false, possibleDatabases: [match.database] };
+    }
   }
 
-  // Second pass: try any database (cross-database match)
+  // Second pass: find ALL cross-database matches to detect ambiguity
   for (const name of namesToTry) {
-    const match = containers.find(c =>
+    const allMatches = containers.filter(c =>
       c.name.toLowerCase() === name &&
       c.name.toLowerCase() !== sourceContainer.toLowerCase()
     );
-    if (match) return match;
+
+    if (allMatches.length > 0) {
+      // Get unique databases that have this container
+      const uniqueDatabases = [...new Set(allMatches.map(m => m.database))];
+
+      return {
+        match: allMatches[0],
+        isAmbiguous: uniqueDatabases.length > 1,
+        possibleDatabases: uniqueDatabases
+      };
+    }
   }
 
-  return null;
+  return { match: null, isAmbiguous: false, possibleDatabases: [] };
 }
 
 /**
