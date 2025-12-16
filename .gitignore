@@ -5,7 +5,7 @@ node_modules/
 .env
 
 # Generated output (contains real customer data examples)
-output/
+/output/
 
 # OS files
 .DS_Store
