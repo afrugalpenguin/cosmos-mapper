@@ -119,6 +119,18 @@ Relationships are detected from:
 >
 > Always verify critical relationships against your application code or domain knowledge.
 
+## Testing
+
+Run the test suite:
+
+```bash
+npm test          # Watch mode
+npm run test:run  # Single run
+npm run test:coverage  # With coverage report
+```
+
+134 unit tests covering type detection, schema inference, relationship detection, and output generation.
+
 ## Demo with Cosmos DB Emulator
 
 You can test the tool locally using the Azure Cosmos DB Emulator:
