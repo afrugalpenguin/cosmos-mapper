@@ -106,11 +106,41 @@ Relationships are detected from:
 - Nested objects with `Id` property (e.g., `Policy.Id` → `policies`)
 - Reference pattern objects
 
-## Development
+## Demo with Cosmos DB Emulator
+
+You can test the tool locally using the Azure Cosmos DB Emulator:
+
+### 1. Install the Emulator
+
+```powershell
+winget install Microsoft.Azure.CosmosEmulator
+```
+
+Or download from: https://aka.ms/cosmosdb-emulator
+
+### 2. Seed Sample Data
 
 ```bash
-# Run with debug logging
-DEBUG=true npm start
+npm run seed
+```
+
+This creates `sample-tenant` and `sample-platform` databases with synthetic data.
+
+### 3. Configure and Run
+
+Update `.env`:
+
+```env
+COSMOS_ENDPOINT=https://localhost:8081
+COSMOS_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
+TENANT_DATABASE=sample-tenant
+PLATFORM_DATABASE=sample-platform
+```
+
+Then run:
+
+```bash
+npm start
 ```
 
 ## License

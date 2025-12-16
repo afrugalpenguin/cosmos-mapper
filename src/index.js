@@ -8,6 +8,11 @@
  */
 
 import 'dotenv/config';
+
+// Allow self-signed certs for local emulator
+if (process.env.COSMOS_ENDPOINT?.includes('localhost')) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 import { createCosmosClient, listDatabases, listContainers, sampleDocuments, getContainerInfo } from './cosmos/client.js';
 import { inferSchema } from './analysis/schemaInferrer.js';
 import { detectRelationships } from './analysis/relationships.js';
