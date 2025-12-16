@@ -97,6 +97,13 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 
 **Goal:** Provide a richer exploration experience.
 
+### Configuration UI
+- [ ] Web-based setup wizard (`npm run setup`)
+- [ ] Connect to Cosmos account and browse available databases
+- [ ] Select endpoint(s) and database(s) to document
+- [ ] Save configuration profiles for different environments
+- [ ] Support for multiple Cosmos accounts in one session
+
 ### Web UI
 - [ ] Local web server mode (`npm run serve`)
 - [ ] Interactive ERD with zoom/pan/filter
