@@ -18,9 +18,8 @@ Automatically samples documents from your Cosmos DB containers, infers schemas, 
 - **Schema Inference**: Samples documents and infers property types, optionality, and patterns
 - **Type Detection**: Recognises GUIDs, dates, reference objects, lookup objects, and more
 - **Relationship Detection**: Identifies foreign key-like relationships between containers
-- **Cross-Database Support**: Detects relationships across store and platform databases
-- **Mermaid ERD Diagrams**: Generates visual entity relationship diagrams
-- **ADO Wiki Compatible**: Output is ready for Azure DevOps wikis
+- **Cross-Database Support**: Detects relationships between containers across different databases
+- **Mermaid ERD Diagrams**: Generates visual entity relationship diagrams (compatible with these tools: https://mermaid.js.org/ecosystem/integrations-community.html).
 
 ## Installation
 
