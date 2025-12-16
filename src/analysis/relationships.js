@@ -40,7 +40,7 @@ export function detectRelationships(containerName, databaseName, schema, allCont
     const refs = findReferencesInProperty(prop, containerName);
 
     for (const ref of refs) {
-      const match = matchToContainer(ref.targetName, allContainers, containerName);
+      const match = matchToContainer(ref.targetName, allContainers, containerName, databaseName);
 
       const relationship = {
         fromContainer: containerName,
@@ -107,40 +107,31 @@ function findReferencesInProperty(prop, sourceContainer) {
 
 /**
  * Attempts to match a reference name to an existing container.
+ * Prefers same-database matches over cross-database matches.
  */
-function matchToContainer(targetName, containers, sourceContainer) {
+function matchToContainer(targetName, containers, sourceContainer, sourceDatabase) {
   const normalised = targetName.toLowerCase();
+  const namesToTry = [
+    normalised,
+    normalised + 's', // plural
+    normalised.endsWith('s') ? normalised.slice(0, -1) : null, // singular
+    normalised.endsWith('ies') ? normalised.slice(0, -3) + 'y' : null // categories -> category
+  ].filter(Boolean);
 
-  // Try exact match first
-  let match = containers.find(c =>
-    c.name.toLowerCase() === normalised &&
-    c.name.toLowerCase() !== sourceContainer.toLowerCase()
-  );
-  if (match) return match;
-
-  // Try plural form
-  const plural = normalised + 's';
-  match = containers.find(c =>
-    c.name.toLowerCase() === plural &&
-    c.name.toLowerCase() !== sourceContainer.toLowerCase()
-  );
-  if (match) return match;
-
-  // Try singular form (remove trailing 's')
-  if (normalised.endsWith('s')) {
-    const singular = normalised.slice(0, -1);
-    match = containers.find(c =>
-      c.name.toLowerCase() === singular &&
-      c.name.toLowerCase() !== sourceContainer.toLowerCase()
+  // First pass: try to find a match in the same database
+  for (const name of namesToTry) {
+    const match = containers.find(c =>
+      c.name.toLowerCase() === name &&
+      c.name.toLowerCase() !== sourceContainer.toLowerCase() &&
+      c.database === sourceDatabase
     );
     if (match) return match;
   }
 
-  // Try 'ies' -> 'y' (e.g., categories -> category)
-  if (normalised.endsWith('ies')) {
-    const singular = normalised.slice(0, -3) + 'y';
-    match = containers.find(c =>
-      c.name.toLowerCase() === singular &&
+  // Second pass: try any database (cross-database match)
+  for (const name of namesToTry) {
+    const match = containers.find(c =>
+      c.name.toLowerCase() === name &&
       c.name.toLowerCase() !== sourceContainer.toLowerCase()
     );
     if (match) return match;
