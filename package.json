@@ -1,0 +1,26 @@
+{
+  "name": "cosmosmapper",
+  "version": "1.0.0",
+  "description": "Azure Cosmos DB schema documentation generator with ERD diagrams",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "keywords": [
+    "cosmosdb",
+    "azure",
+    "schema",
+    "documentation",
+    "erd",
+    "mermaid",
+    "wiki"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@azure/cosmos": "^4.2.0",
+    "@azure/identity": "^4.5.0",
+    "dotenv": "^16.4.5"
+  }
+}

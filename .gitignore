@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+
+# Environment variables (contains secrets)
+.env
+
+# Generated output (contains real customer data examples)
+output/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Optional npm cache
+.npm
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Using Claude for code reviews
+.claude/
+.claude.md
