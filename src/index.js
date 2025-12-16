@@ -23,8 +23,8 @@ import { logger } from './utils/logger.js';
 const config = {
   endpoint: process.env.COSMOS_ENDPOINT,
   key: process.env.COSMOS_KEY || null, // null triggers Azure AD auth
-  storeDatabase: process.env.STORE_DATABASE,
-  platformDatabase: process.env.PLATFORM_DATABASE,
+  // Optional: comma-separated list of databases to document (empty = all)
+  databases: process.env.DATABASES ? process.env.DATABASES.split(',').map(s => s.trim()).filter(s => s) : [],
   sampleSize: parseInt(process.env.SAMPLE_SIZE, 10) || 100,
   outputDir: './output'
 };
@@ -41,11 +41,6 @@ async function main() {
     process.exit(1);
   }
 
-  if (!config.storeDatabase && !config.platformDatabase) {
-    logger.error('At least one of STORE_DATABASE or PLATFORM_DATABASE is required.');
-    process.exit(1);
-  }
-
   try {
     // Connect to Cosmos DB
     logger.info(`Connecting to Cosmos DB...`);
@@ -54,26 +49,29 @@ async function main() {
 
     const client = createCosmosClient(config.endpoint, config.key);
 
-    // Verify connection by listing databases
+    // Discover all databases in the account
     const allDatabases = await listDatabases(client);
     logger.success(`Connected. Found ${allDatabases.length} databases.`);
 
     // Build list of databases to analyse
     const databasesToAnalyse = {};
 
-    if (config.storeDatabase) {
-      if (!allDatabases.includes(config.storeDatabase)) {
-        logger.warn(`Store database '${config.storeDatabase}' not found.`);
-      } else {
-        databasesToAnalyse[config.storeDatabase] = { type: 'store', containers: [] };
-      }
+    // If DATABASES is specified, filter to those; otherwise use all
+    const databasesToProcess = config.databases.length > 0
+      ? config.databases
+      : allDatabases;
+
+    if (config.databases.length > 0) {
+      logger.item(`Filtering to specified databases: ${config.databases.join(', ')}`);
+    } else {
+      logger.item(`Documenting all ${allDatabases.length} databases`);
     }
 
-    if (config.platformDatabase) {
-      if (!allDatabases.includes(config.platformDatabase)) {
-        logger.warn(`Platform database '${config.platformDatabase}' not found.`);
+    for (const dbName of databasesToProcess) {
+      if (!allDatabases.includes(dbName)) {
+        logger.warn(`Database '${dbName}' not found - skipping.`);
       } else {
-        databasesToAnalyse[config.platformDatabase] = { type: 'platform', containers: [] };
+        databasesToAnalyse[dbName] = { containers: [] };
       }
     }
 
@@ -97,8 +95,7 @@ async function main() {
       for (const containerName of dbInfo.containers) {
         allContainers.push({
           name: containerName,
-          database: dbName,
-          databaseType: dbInfo.type
+          database: dbName
         });
       }
     }
@@ -108,7 +105,7 @@ async function main() {
     const allRelationships = [];
 
     for (const [dbName, dbInfo] of Object.entries(databasesToAnalyse)) {
-      logger.section(`Analysing ${dbName} (${dbInfo.type})...`);
+      logger.section(`Analysing ${dbName}...`);
 
       for (const containerName of dbInfo.containers) {
         try {
@@ -129,7 +126,6 @@ async function main() {
           const relationships = detectRelationships(
             containerName,
             dbName,
-            dbInfo.type,
             schema,
             allContainers
           );
