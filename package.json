@@ -6,7 +6,10 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "seed": "node scripts/seed-emulator.js"
+    "seed": "node scripts/seed-emulator.js",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "keywords": [
     "cosmosdb",
@@ -23,5 +26,9 @@
     "@azure/cosmos": "^4.2.0",
     "@azure/identity": "^4.5.0",
     "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.9",
+    "vitest": "^2.1.8"
   }
 }
