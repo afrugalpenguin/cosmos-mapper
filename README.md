@@ -4,9 +4,14 @@
   <img src="logo.svg" alt="CosmosMapper Logo" width="200">
 </p>
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
+[![Azure Cosmos DB](https://img.shields.io/badge/Azure-Cosmos%20DB-0078D4)](https://azure.microsoft.com/services/cosmos-db/)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/)
+
 Azure Cosmos DB schema documentation generator with ERD diagrams.
 
-Automatically samples documents from your Cosmos DB containers, infers schemas, detects relationships, and generates Azure DevOps wiki-compatible Markdown documentation with Mermaid ERD diagrams.
+Automatically samples documents from your Cosmos DB containers, infers schemas, detects relationships, and generates industry standard, wiki-compatible, Markdown documentation with Mermaid ERD diagrams.
 
 ## Features
 
