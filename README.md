@@ -1,6 +1,6 @@
 # CosmosMapper
 
-<p align="center">
+<p align="left">
   <img src="logo.svg" alt="CosmosMapper Logo" width="200">
 </p>
 
