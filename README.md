@@ -1,5 +1,9 @@
 # CosmosMapper
 
+<p align="center">
+  <img src="logo.svg" alt="CosmosMapper Logo" width="200">
+</p>
+
 Azure Cosmos DB schema documentation generator with ERD diagrams.
 
 Automatically samples documents from your Cosmos DB containers, infers schemas, detects relationships, and generates Azure DevOps wiki-compatible Markdown documentation with Mermaid ERD diagrams.
