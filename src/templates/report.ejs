@@ -303,16 +303,19 @@
 
     <!-- Databases -->
     <% for (const [dbName, dbInfo] of Object.entries(databases)) { %>
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden" data-database="<%= dbName %>">
-      <div class="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-200">
+    <details class="db-section bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden" data-database="<%= dbName %>" open>
+      <summary class="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-200 cursor-pointer hover:from-gray-100 hover:to-gray-50 transition-colors">
         <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <svg class="w-4 h-4 chevron text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
           <svg class="w-5 h-5 text-cosmos-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
           </svg>
           <%= dbName %>
           <span class="text-sm font-normal text-gray-500">(<%= dbInfo.containers.length %> containers)</span>
         </h2>
-      </div>
+      </summary>
 
       <div class="p-6">
         <!-- Database ERD -->
@@ -429,7 +432,7 @@
         <% } %>
         <% } %>
       </div>
-    </section>
+    </details>
     <% } %>
 
     <!-- Cross-Database Relationships -->
@@ -554,11 +557,11 @@
 
     // Expand/Collapse all
     function expandAll() {
-      document.querySelectorAll('.container-details, .nav-db-section').forEach(d => d.open = true);
+      document.querySelectorAll('.container-details, .nav-db-section, .db-section').forEach(d => d.open = true);
     }
 
     function collapseAll() {
-      document.querySelectorAll('.container-details, .nav-db-section').forEach(d => d.open = false);
+      document.querySelectorAll('.container-details, .nav-db-section, .db-section').forEach(d => d.open = false);
     }
 
     // Search functionality
