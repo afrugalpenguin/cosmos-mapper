@@ -3,21 +3,28 @@
 /**
  * Seeds the Cosmos DB Emulator with sample data for demo purposes.
  * Run: node scripts/seed-emulator.js
+ *
+ * Uses COSMOS_ENDPOINT and COSMOS_KEY from .env file,
+ * falling back to emulator defaults if not set.
  */
 
+import 'dotenv/config';
 import { CosmosClient } from '@azure/cosmos';
 
-// Emulator defaults
-const EMULATOR_ENDPOINT = 'https://localhost:8081';
-const EMULATOR_KEY = 'C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==';
+// Emulator defaults (well-known public key for local emulator)
+const DEFAULT_EMULATOR_ENDPOINT = 'https://localhost:8081';
+const DEFAULT_EMULATOR_KEY = 'C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==';
+
+// Use environment variables or fall back to emulator defaults
+const endpoint = process.env.COSMOS_ENDPOINT || DEFAULT_EMULATOR_ENDPOINT;
+const key = process.env.COSMOS_KEY || DEFAULT_EMULATOR_KEY;
 
 // Disable TLS verification for emulator's self-signed cert
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+if (endpoint.includes('localhost')) {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+}
 
-const client = new CosmosClient({
-  endpoint: EMULATOR_ENDPOINT,
-  key: EMULATOR_KEY
-});
+const client = new CosmosClient({ endpoint, key });
 
 // Sample data - e-commerce domain (completely synthetic)
 const sampleData = {
@@ -381,14 +388,9 @@ async function seedDatabase() {
 
     console.log('Done! Sample data seeded successfully.');
     console.log('');
-    console.log('To run cosmos-mapper against this data:');
+    console.log(`Endpoint: ${endpoint}`);
     console.log('');
-    console.log('  1. Update .env:');
-    console.log('     COSMOS_ENDPOINT=https://localhost:8081');
-    console.log('     COSMOS_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==');
-    console.log('');
-    console.log('  2. Run: npm start');
-    console.log('');
+    console.log('To run cosmos-mapper: npm start');
 
   } catch (error) {
     console.error('');
