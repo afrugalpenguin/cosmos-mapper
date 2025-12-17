@@ -201,20 +201,28 @@
         ERD Diagram
       </a>
       <% for (const [dbName, dbInfo] of Object.entries(databases)) { %>
-      <div class="mt-3">
-        <div class="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"><%= dbName %></div>
-        <% for (const containerName of dbInfo.containers) { %>
-        <a href="#<%= dbName %>-<%= containerName %>"
-           class="nav-item flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg border-l-2 border-transparent ml-2"
-           data-container="<%= containerName %>"
-           data-database="<%= dbName %>">
-          <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      <details class="mt-3 nav-db-section" open>
+        <summary class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 rounded-lg">
+          <svg class="w-3 h-3 chevron text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
           </svg>
-          <%= containerName %>
-        </a>
-        <% } %>
-      </div>
+          <%= dbName %>
+          <span class="text-gray-400 font-normal normal-case">(<%= dbInfo.containers.length %>)</span>
+        </summary>
+        <div class="ml-2">
+          <% for (const containerName of dbInfo.containers) { %>
+          <a href="#<%= dbName %>-<%= containerName %>"
+             class="nav-item flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg border-l-2 border-transparent ml-2"
+             data-container="<%= containerName %>"
+             data-database="<%= dbName %>">
+            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <%= containerName %>
+          </a>
+          <% } %>
+        </div>
+      </details>
       <% } %>
     </nav>
   </aside>
@@ -546,11 +554,11 @@
 
     // Expand/Collapse all
     function expandAll() {
-      document.querySelectorAll('.container-details').forEach(d => d.open = true);
+      document.querySelectorAll('.container-details, .nav-db-section').forEach(d => d.open = true);
     }
 
     function collapseAll() {
-      document.querySelectorAll('.container-details').forEach(d => d.open = false);
+      document.querySelectorAll('.container-details, .nav-db-section').forEach(d => d.open = false);
     }
 
     // Search functionality
