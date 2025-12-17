@@ -88,10 +88,10 @@ export const sampleDocuments = [
     price: 19.99,
     active: true,
     createdAt: '2024-01-15T10:30:00Z',
-    tenant: {
+    store: {
       Id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
-      Name: 'Tenant A',
-      Code: 'TENA'
+      Name: 'Store A',
+      Code: 'STRA'
     },
     tags: ['tag1', 'tag2'],
     metadata: {
@@ -110,10 +110,10 @@ export const sampleDocuments = [
     price: 29.99,
     active: false,
     createdAt: '2024-01-16T11:00:00Z',
-    tenant: {
+    store: {
       Id: 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff',
-      Name: 'Tenant B',
-      Code: 'TENB'
+      Name: 'Store B',
+      Code: 'STRB'
     },
     tags: ['tag3'],
     optionalField: 'sometimes present',
@@ -166,15 +166,15 @@ export const edgeCaseDocuments = {
 
 // Container configurations for relationship testing
 export const testContainers = [
-  { name: 'tenants', database: 'platform' },
-  { name: 'contracts', database: 'platform' },
-  { name: 'policies', database: 'platform' },
-  { name: 'claims', database: 'tenant-a' },
-  { name: 'policies', database: 'tenant-a' },
-  { name: 'events', database: 'tenant-a' },
-  { name: 'claims', database: 'tenant-b' },
-  { name: 'policies', database: 'tenant-b' },
-  { name: 'events', database: 'tenant-b' }
+  { name: 'stores', database: 'platform' },
+  { name: 'suppliers', database: 'platform' },
+  { name: 'categories', database: 'platform' },
+  { name: 'products', database: 'store-a' },
+  { name: 'orders', database: 'store-a' },
+  { name: 'customers', database: 'store-a' },
+  { name: 'products', database: 'store-b' },
+  { name: 'orders', database: 'store-b' },
+  { name: 'customers', database: 'store-b' }
 ];
 
 // Schema with various relationship patterns
@@ -188,49 +188,49 @@ export const schemaWithRelationships = {
       occurrences: 100,
       isRequired: true
     },
-    TenantId: {
-      path: 'TenantId',
-      name: 'TenantId',
+    StoreId: {
+      path: 'StoreId',
+      name: 'StoreId',
       parentPath: null,
       types: ['guid'],
       occurrences: 100,
       isRequired: true
     },
-    tenant_id: {
-      path: 'tenant_id',
-      name: 'tenant_id',
+    store_id: {
+      path: 'store_id',
+      name: 'store_id',
       parentPath: null,
       types: ['guid'],
       occurrences: 50,
       isRequired: false
     },
-    Policy: {
-      path: 'Policy',
-      name: 'Policy',
+    Category: {
+      path: 'Category',
+      name: 'Category',
       parentPath: null,
       types: ['ReferenceObject'],
       occurrences: 100,
       isRequired: true
     },
-    'Policy.Id': {
-      path: 'Policy.Id',
+    'Category.Id': {
+      path: 'Category.Id',
       name: 'Id',
-      parentPath: 'Policy',
+      parentPath: 'Category',
       types: ['guid'],
       occurrences: 100,
       isRequired: true
     },
-    Contract: {
-      path: 'Contract',
-      name: 'Contract',
+    Supplier: {
+      path: 'Supplier',
+      name: 'Supplier',
       parentPath: null,
       types: ['SimpleReference'],
       occurrences: 80,
       isRequired: false
     },
-    EventId: {
-      path: 'EventId',
-      name: 'EventId',
+    CustomerId: {
+      path: 'CustomerId',
+      name: 'CustomerId',
       parentPath: null,
       types: ['guid'],
       occurrences: 100,
