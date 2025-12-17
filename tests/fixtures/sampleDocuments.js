@@ -91,7 +91,7 @@ export const sampleDocuments = [
     store: {
       Id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       Name: 'Store A',
-      Code: 'TENA'
+      Code: 'STRA'
     },
     tags: ['tag1', 'tag2'],
     metadata: {
@@ -113,7 +113,7 @@ export const sampleDocuments = [
     store: {
       Id: 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff',
       Name: 'Store B',
-      Code: 'TENB'
+      Code: 'STRB'
     },
     tags: ['tag3'],
     optionalField: 'sometimes present',
@@ -167,14 +167,14 @@ export const edgeCaseDocuments = {
 // Container configurations for relationship testing
 export const testContainers = [
   { name: 'stores', database: 'platform' },
-  { name: 'contracts', database: 'platform' },
+  { name: 'suppliers', database: 'platform' },
   { name: 'categories', database: 'platform' },
+  { name: 'products', database: 'store-a' },
   { name: 'orders', database: 'store-a' },
-  { name: 'categories', database: 'store-a' },
-  { name: 'events', database: 'store-a' },
+  { name: 'customers', database: 'store-a' },
+  { name: 'products', database: 'store-b' },
   { name: 'orders', database: 'store-b' },
-  { name: 'categories', database: 'store-b' },
-  { name: 'events', database: 'store-b' }
+  { name: 'customers', database: 'store-b' }
 ];
 
 // Schema with various relationship patterns
@@ -204,33 +204,33 @@ export const schemaWithRelationships = {
       occurrences: 50,
       isRequired: false
     },
-    Product: {
-      path: 'Product',
-      name: 'Product',
+    Category: {
+      path: 'Category',
+      name: 'Category',
       parentPath: null,
       types: ['ReferenceObject'],
       occurrences: 100,
       isRequired: true
     },
-    'Product.Id': {
-      path: 'Product.Id',
+    'Category.Id': {
+      path: 'Category.Id',
       name: 'Id',
-      parentPath: 'Product',
+      parentPath: 'Category',
       types: ['guid'],
       occurrences: 100,
       isRequired: true
     },
-    Contract: {
-      path: 'Contract',
-      name: 'Contract',
+    Supplier: {
+      path: 'Supplier',
+      name: 'Supplier',
       parentPath: null,
       types: ['SimpleReference'],
       occurrences: 80,
       isRequired: false
     },
-    EventId: {
-      path: 'EventId',
-      name: 'EventId',
+    CustomerId: {
+      path: 'CustomerId',
+      name: 'CustomerId',
       parentPath: null,
       types: ['guid'],
       occurrences: 100,
