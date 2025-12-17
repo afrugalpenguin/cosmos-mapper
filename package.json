@@ -7,9 +7,9 @@
   "scripts": {
     "start": "node src/index.js",
     "seed": "node scripts/seed-emulator.js",
-    "test": "vitest",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test": "vitest --config tests/vitest.config.js",
+    "test:run": "vitest run --config tests/vitest.config.js",
+    "test:coverage": "vitest run --coverage --config tests/vitest.config.js"
   },
   "keywords": [
     "cosmosdb",
