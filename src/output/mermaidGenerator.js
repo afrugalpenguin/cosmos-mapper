@@ -102,9 +102,9 @@ function formatPropertyLine(prop, fkProperties, options) {
   let keyMarker = '';
   if (options.showKeys) {
     if (prop.name === 'id') {
-      keyMarker = ' PK';
+      keyMarker = ' ID';
     } else if (fkProperties.has(prop.name)) {
-      keyMarker = ' FK';
+      keyMarker = ' REF';
     }
   }
 
