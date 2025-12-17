@@ -40,11 +40,11 @@ describe('mermaidGenerator', () => {
       const erd = generateERD(schemas, relationships);
 
       expect(erd).toContain('users {');
-      expect(erd).toContain('guid id PK');
+      expect(erd).toContain('guid id ID');
       expect(erd).toContain('string name');
     });
 
-    it('should mark PK for id property', () => {
+    it('should mark ID for id property', () => {
       const schemas = {
         items: {
           properties: {
@@ -55,10 +55,10 @@ describe('mermaidGenerator', () => {
 
       const erd = generateERD(schemas, [], { showKeys: true });
 
-      expect(erd).toContain('guid id PK');
+      expect(erd).toContain('guid id ID');
     });
 
-    it('should mark FK for relationship properties', () => {
+    it('should mark REF for relationship properties', () => {
       const schemas = {
         claims: {
           properties: {
@@ -78,7 +78,7 @@ describe('mermaidGenerator', () => {
 
       const erd = generateERD(schemas, relationships, { showKeys: true });
 
-      expect(erd).toContain('guid TenantId FK');
+      expect(erd).toContain('guid TenantId REF');
     });
 
     it('should mark optional properties with comment', () => {

@@ -155,7 +155,7 @@ async function generateDatabaseOverview(dbName, dbInfo, containerSchemas, relati
     '| `}o` | Zero or more |',
     '| `}\\|` | One or more |',
     '',
-    '**Key Markers:** `PK` = Primary Key, `FK` = Foreign Key',
+    '**Key Markers:** `ID` = Document Identifier, `REF` = Inferred Reference',
     '',
     '</details>',
     '',
