@@ -25,7 +25,8 @@
   "dependencies": {
     "@azure/cosmos": "^4.2.0",
     "@azure/identity": "^4.5.0",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^2.1.9",

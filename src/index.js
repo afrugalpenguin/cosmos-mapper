@@ -17,6 +17,7 @@ import { createCosmosClient, listDatabases, listContainers, sampleDocuments, get
 import { inferSchema } from './analysis/schemaInferrer.js';
 import { detectRelationships } from './analysis/relationships.js';
 import { generateDocumentation } from './output/markdownGenerator.js';
+import { generateHtmlDocumentation } from './output/htmlGenerator.js';
 import { logger } from './utils/logger.js';
 
 // Configuration from environment
@@ -150,12 +151,20 @@ async function main() {
     logger.section('Generating documentation...');
 
     const timestamp = new Date().toISOString();
-    await generateDocumentation({
+    const analysisData = {
       databases: databasesToAnalyse,
       containerSchemas,
       relationships: allRelationships,
       timestamp
-    }, config.outputDir);
+    };
+
+    // Generate Markdown documentation
+    await generateDocumentation(analysisData, config.outputDir);
+    logger.item('Markdown documentation generated');
+
+    // Generate HTML report
+    const htmlPath = await generateHtmlDocumentation(analysisData, config.outputDir);
+    logger.item(`HTML report generated: ${htmlPath}`);
 
     logger.done(config.outputDir);
 
