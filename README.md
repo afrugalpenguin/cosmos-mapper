@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-134%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-158%20passing-brightgreen)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](tests/)
 [![Azure Cosmos DB](https://img.shields.io/badge/Azure-Cosmos%20DB-0078D4)](https://azure.microsoft.com/services/cosmos-db/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/)
@@ -60,6 +60,50 @@ SAMPLE_SIZE=100
 - Azure CLI (`az login`)
 - Visual Studio Code
 - Environment variables (`AZURE_CLIENT_ID`, `AZURE_STORE_ID`, `AZURE_CLIENT_SECRET`)
+
+### Config File (Optional)
+
+For more advanced configuration, create a `cosmosmapper.config.json` file:
+
+```json
+{
+  "output": "./output",
+  "sampleSize": 100,
+  "databases": [],
+  "containers": {
+    "include": [],
+    "exclude": ["*-archive", "*-backup", "test-*"]
+  },
+  "formats": ["markdown", "html"]
+}
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `output` | Output directory for generated documentation | `./output` |
+| `sampleSize` | Number of documents to sample per container | `100` |
+| `databases` | Array of database names to include (empty = all) | `[]` |
+| `containers.include` | Glob patterns for containers to include | `[]` (all) |
+| `containers.exclude` | Glob patterns for containers to exclude | `[]` |
+| `formats` | Output formats: `markdown`, `html` | `["markdown", "html"]` |
+
+See `cosmosmapper.config.example.json` for a template.
+
+### CLI Arguments
+
+Override config file settings via command line:
+
+```bash
+npm start -- --output ./docs --sample-size 50 --databases "db1,db2" --format markdown
+```
+
+| Argument | Description |
+|----------|-------------|
+| `--config <path>` | Path to config file (default: `cosmosmapper.config.json`) |
+| `--output <dir>` | Output directory |
+| `--sample-size <n>` | Documents to sample per container |
+| `--databases <list>` | Comma-separated database names |
+| `--format <list>` | Comma-separated output formats |
 
 ## Usage
 
@@ -129,7 +173,7 @@ npm run test:run  # Single run
 npm run test:coverage  # With coverage report
 ```
 
-134 unit tests covering type detection, schema inference, relationship detection, and output generation.
+158 unit tests covering configuration, type detection, schema inference, relationship detection, and output generation.
 
 ## Demo with Cosmos DB Emulator
 

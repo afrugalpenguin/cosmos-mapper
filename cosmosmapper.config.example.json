@@ -1,0 +1,10 @@
+{
+  "output": "./output",
+  "sampleSize": 100,
+  "databases": [],
+  "containers": {
+    "include": [],
+    "exclude": ["*-archive", "*-backup", "test-*"]
+  },
+  "formats": ["markdown", "html"]
+}

@@ -19,16 +19,7 @@ import { detectRelationships } from './analysis/relationships.js';
 import { generateDocumentation } from './output/markdownGenerator.js';
 import { generateHtmlDocumentation } from './output/htmlGenerator.js';
 import { logger } from './utils/logger.js';
-
-// Configuration from environment
-const config = {
-  endpoint: process.env.COSMOS_ENDPOINT,
-  key: process.env.COSMOS_KEY || null, // null triggers Azure AD auth
-  // Optional: comma-separated list of databases to document (empty = all)
-  databases: process.env.DATABASES ? process.env.DATABASES.split(',').map(s => s.trim()).filter(s => s) : [],
-  sampleSize: parseInt(process.env.SAMPLE_SIZE, 10) || 100,
-  outputDir: './output'
-};
+import { loadConfig, shouldIncludeContainer } from './config/index.js';
 
 /**
  * Main entry point.
@@ -36,9 +27,12 @@ const config = {
 async function main() {
   logger.header();
 
-  // Validate configuration
-  if (!config.endpoint) {
-    logger.error('COSMOS_ENDPOINT is required. Set it in your .env file.');
+  // Load configuration
+  let config;
+  try {
+    config = await loadConfig();
+  } catch (error) {
+    logger.error(error.message);
     process.exit(1);
   }
 
@@ -85,9 +79,16 @@ async function main() {
     logger.section('Discovering containers...');
 
     for (const [dbName, dbInfo] of Object.entries(databasesToAnalyse)) {
-      const containers = await listContainers(client, dbName);
+      const allDbContainers = await listContainers(client, dbName);
+      // Filter containers based on include/exclude patterns
+      const containers = allDbContainers.filter(c => shouldIncludeContainer(c, config));
       dbInfo.containers = containers;
-      logger.item(`${dbName}: ${containers.length} containers`);
+
+      if (containers.length < allDbContainers.length) {
+        logger.item(`${dbName}: ${containers.length}/${allDbContainers.length} containers (filtered)`);
+      } else {
+        logger.item(`${dbName}: ${containers.length} containers`);
+      }
     }
 
     // Build list of all containers for relationship matching
@@ -158,15 +159,18 @@ async function main() {
       timestamp
     };
 
-    // Generate Markdown documentation
-    await generateDocumentation(analysisData, config.outputDir);
-    logger.item('Markdown documentation generated');
+    // Generate outputs based on configured formats
+    if (config.formats.includes('markdown')) {
+      await generateDocumentation(analysisData, config.output);
+      logger.item('Markdown documentation generated');
+    }
 
-    // Generate HTML report
-    const htmlPath = await generateHtmlDocumentation(analysisData, config.outputDir);
-    logger.item(`HTML report generated: ${htmlPath}`);
+    if (config.formats.includes('html')) {
+      const htmlPath = await generateHtmlDocumentation(analysisData, config.output);
+      logger.item(`HTML report generated: ${htmlPath}`);
+    }
 
-    logger.done(config.outputDir);
+    logger.done(config.output);
 
   } catch (error) {
     logger.error(`Fatal error: ${error.message}`, error);
