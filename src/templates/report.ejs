@@ -73,79 +73,215 @@
       background: #f3f4f6;
       border-color: #9ca3af;
     }
+    /* Sidebar styles */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      height: 100vh;
+      width: 280px;
+      background: white;
+      border-right: 1px solid #e5e7eb;
+      overflow-y: auto;
+      z-index: 40;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+    }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: 30;
+      display: none;
+    }
+    .sidebar-overlay.open { display: block; }
+    @media (min-width: 1024px) {
+      .sidebar {
+        transform: translateX(0);
+        top: 76px;
+        height: calc(100vh - 76px);
+      }
+      .sidebar-overlay { display: none !important; }
+      .main-content { margin-left: 280px; }
+    }
+    /* Search highlight */
+    .search-highlight {
+      background: #fef08a;
+      padding: 0 2px;
+      border-radius: 2px;
+    }
+    .search-match { display: block !important; }
+    .search-hidden { display: none !important; }
+    /* Nav active state */
+    .nav-item.active {
+      background: #dbeafe;
+      border-left-color: #3b82f6;
+    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
   <!-- Header -->
-  <header class="bg-gradient-to-r from-cosmos-700 to-cosmos-900 text-white shadow-lg">
-    <div class="px-4 py-6 sm:px-6 lg:px-8">
-      <div class="flex items-center gap-4">
-        <div class="bg-white/10 p-3 rounded-lg">
-          <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
+  <header class="bg-gradient-to-r from-cosmos-700 to-cosmos-900 text-white shadow-lg sticky top-0 z-20">
+    <div class="px-4 py-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <!-- Mobile menu button -->
+          <button onclick="toggleSidebar()" class="lg:hidden p-2 hover:bg-white/10 rounded-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <div class="bg-white/10 p-2 rounded-lg hidden sm:block">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="text-lg sm:text-xl font-bold">Cosmos DB Schema Documentation</h1>
+            <p class="text-cosmos-200 text-xs sm:text-sm hidden sm:block">Generated: <%= timestamp %></p>
+          </div>
         </div>
-        <div>
-          <h1 class="text-2xl font-bold">Cosmos DB Schema Documentation</h1>
-          <p class="text-cosmos-200 text-sm">Generated: <%= timestamp %></p>
+        <!-- Search -->
+        <div class="relative flex-1 max-w-md">
+          <input
+            type="text"
+            id="searchInput"
+            placeholder="Search containers, properties..."
+            class="w-full px-4 py-2 pl-10 text-sm text-gray-900 bg-white/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50"
+            onkeyup="handleSearch(this.value)"
+          >
+          <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <button onclick="clearSearch()" id="clearSearchBtn" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 hidden">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
   </header>
 
-  <main class="px-4 py-8 sm:px-6 lg:px-8">
-    <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center">
-          <div class="p-3 bg-blue-100 rounded-lg">
-            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="p-4 border-b border-gray-200 bg-gray-50">
+      <div class="flex items-center justify-between">
+        <h2 class="font-semibold text-gray-700">Navigation</h2>
+        <div class="flex gap-1">
+          <button onclick="expandAll()" class="p-1.5 text-xs text-gray-600 hover:bg-gray-200 rounded" title="Expand all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
             </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500">Databases</p>
-            <p class="text-2xl font-bold text-gray-900"><%= Object.keys(databases).length %></p>
-          </div>
+          </button>
+          <button onclick="collapseAll()" class="p-1.5 text-xs text-gray-600 hover:bg-gray-200 rounded" title="Collapse all">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"/>
+            </svg>
+          </button>
         </div>
       </div>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center">
-          <div class="p-3 bg-green-100 rounded-lg">
-            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-            </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500">Containers</p>
-            <p class="text-2xl font-bold text-gray-900"><%= Object.keys(containerSchemas).length %></p>
-          </div>
-        </div>
-      </div>
-      <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div class="flex items-center">
-          <div class="p-3 bg-purple-100 rounded-lg">
-            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
-            </svg>
-          </div>
-          <div class="ml-4">
-            <p class="text-sm font-medium text-gray-500">Relationships</p>
-            <p class="text-2xl font-bold text-gray-900"><%= relationships.filter(r => !r.isOrphan).length %></p>
-          </div>
-        </div>
-      </div>
+      <div id="searchResults" class="mt-2 text-xs text-gray-500 hidden"></div>
     </div>
+    <nav class="p-2">
+      <a href="#overview" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg border-l-2 border-transparent">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+        </svg>
+        Overview
+      </a>
+      <a href="#erd" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg border-l-2 border-transparent">
+        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+        </svg>
+        ERD Diagram
+      </a>
+      <% for (const [dbName, dbInfo] of Object.entries(databases)) { %>
+      <details class="mt-3 nav-db-section" open>
+        <summary class="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 rounded-lg">
+          <svg class="w-3 h-3 chevron text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+          </svg>
+          <%= dbName %>
+          <span class="text-gray-400 font-normal normal-case">(<%= dbInfo.containers.length %>)</span>
+        </summary>
+        <div class="ml-2">
+          <% for (const containerName of dbInfo.containers) { %>
+          <a href="#<%= dbName %>-<%= containerName %>"
+             class="nav-item flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded-lg border-l-2 border-transparent ml-2"
+             data-container="<%= containerName %>"
+             data-database="<%= dbName %>">
+            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <%= containerName %>
+          </a>
+          <% } %>
+        </div>
+      </details>
+      <% } %>
+    </nav>
+  </aside>
+
+  <main class="main-content px-4 py-8 sm:px-6 lg:px-8">
+    <!-- Stats Cards -->
+    <section id="overview">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="p-3 bg-blue-100 rounded-lg">
+              <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Databases</p>
+              <p class="text-2xl font-bold text-gray-900"><%= Object.keys(databases).length %></p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="p-3 bg-green-100 rounded-lg">
+              <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Containers</p>
+              <p class="text-2xl font-bold text-gray-900"><%= Object.keys(containerSchemas).length %></p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div class="flex items-center">
+            <div class="p-3 bg-purple-100 rounded-lg">
+              <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+              </svg>
+            </div>
+            <div class="ml-4">
+              <p class="text-sm font-medium text-gray-500">Relationships</p>
+              <p class="text-2xl font-bold text-gray-900"><%= relationships.filter(r => !r.isOrphan).length %></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- ERD Diagram -->
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+    <section id="erd" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
       <h2 class="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
         <svg class="w-5 h-5 text-cosmos-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
         </svg>
         Entity Relationship Diagram
       </h2>
-      <div class="diagram-container" style="height: 85vh; min-height: 600px;">
+      <div class="diagram-container" style="height: calc(100vh - 200px); min-height: 500px; max-height: 800px;">
         <div class="diagram-controls">
           <button onclick="zoomIn(this)" title="Zoom In">+</button>
           <button onclick="zoomOut(this)" title="Zoom Out">−</button>
@@ -167,16 +303,16 @@
 
     <!-- Databases -->
     <% for (const [dbName, dbInfo] of Object.entries(databases)) { %>
-    <section class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
-      <div class="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-200">
+    <details class="db-section bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden" data-database="<%= dbName %>" open>
+      <summary class="bg-gradient-to-r from-gray-50 to-white px-6 py-4 border-b border-gray-200 cursor-pointer hover:from-gray-100 hover:to-gray-50 transition-colors">
         <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-          <svg class="w-5 h-5 text-cosmos-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/>
+          <svg class="w-4 h-4 chevron text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
           </svg>
           <%= dbName %>
           <span class="text-sm font-normal text-gray-500">(<%= dbInfo.containers.length %> containers)</span>
         </h2>
-      </div>
+      </summary>
 
       <div class="p-6">
         <!-- Database ERD -->
@@ -188,7 +324,7 @@
             </svg>
             Database ERD
           </summary>
-          <div class="diagram-container" style="height: 600px;">
+          <div class="diagram-container" style="height: calc(100vh - 300px); min-height: 400px; max-height: 600px;">
             <div class="diagram-controls">
               <button onclick="zoomIn(this)" title="Zoom In">+</button>
               <button onclick="zoomOut(this)" title="Zoom Out">−</button>
@@ -208,13 +344,13 @@
         <% const schema = containerSchemas[`${dbName}.${containerName}`] || containerSchemas[containerName]; %>
         <% if (schema) { %>
         <% const containerRels = relationships.filter(r => r.fromContainer === containerName && r.fromDatabase === dbName && !r.isOrphan); %>
-        <details class="border border-gray-200 rounded-lg mb-4">
+        <details id="<%= dbName %>-<%= containerName %>" class="container-details border border-gray-200 rounded-lg mb-4" data-container="<%= containerName %>" data-database="<%= dbName %>">
           <summary class="flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors rounded-t-lg">
             <div class="flex items-center gap-2">
               <svg class="w-4 h-4 chevron text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
               </svg>
-              <span class="font-semibold text-gray-900"><%= containerName %></span>
+              <span class="font-semibold text-gray-900 container-name"><%= containerName %></span>
             </div>
             <div class="flex gap-2">
               <span class="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
@@ -240,9 +376,9 @@
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <% for (const prop of getRootProperties(schema.properties)) { %>
-                <tr class="hover:bg-gray-50">
+                <tr class="hover:bg-gray-50 property-row" data-property="<%= prop.name.toLowerCase() %>">
                   <td class="px-4 py-2 text-sm font-medium text-gray-900">
-                    <%= prop.name %>
+                    <span class="property-name"><%= prop.name %></span>
                     <% if (prop.name === 'id') { %>
                     <span class="ml-1 px-1.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded">ID</span>
                     <% } %>
@@ -250,7 +386,7 @@
                     <span class="ml-1 px-1.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 rounded">REF</span>
                     <% } %>
                   </td>
-                  <td class="px-4 py-2 text-sm text-gray-600">
+                  <td class="px-4 py-2 text-sm text-gray-600 property-type">
                     <%= prop.types.map(t => getTypeDisplayName(t)).join(' | ') %>
                   </td>
                   <td class="px-4 py-2 text-sm">
@@ -293,7 +429,7 @@
         <% } %>
         <% } %>
       </div>
-    </section>
+    </details>
     <% } %>
 
     <!-- Cross-Database Relationships -->
@@ -337,7 +473,7 @@
   </main>
 
   <!-- Footer -->
-  <footer class="bg-gray-100 border-t border-gray-200 mt-12">
+  <footer class="main-content bg-gray-100 border-t border-gray-200 mt-12">
     <div class="px-4 py-6 sm:px-6 lg:px-8">
       <p class="text-center text-sm text-gray-500">
         Generated by <a href="https://github.com/afrugalpenguin/cosmos-mapper" class="text-cosmos-600 hover:underline">CosmosMapper</a>
@@ -376,7 +512,7 @@
           });
           panzoomInstances.set(viewport, instance);
         });
-      }, 500); // Wait for Mermaid to render
+      }, 500);
     });
 
     function getViewport(button) {
@@ -409,6 +545,140 @@
         instance.zoomAbs(0, 0, 1);
       }
     }
+
+    // Sidebar toggle
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+      document.getElementById('sidebarOverlay').classList.toggle('open');
+    }
+
+    // Expand/Collapse all
+    function expandAll() {
+      document.querySelectorAll('.container-details, .nav-db-section, .db-section').forEach(d => d.open = true);
+    }
+
+    function collapseAll() {
+      document.querySelectorAll('.container-details, .nav-db-section, .db-section').forEach(d => d.open = false);
+    }
+
+    // Search functionality
+    let searchTimeout;
+    function handleSearch(query) {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => performSearch(query), 150);
+    }
+
+    function performSearch(query) {
+      const clearBtn = document.getElementById('clearSearchBtn');
+      const resultsDiv = document.getElementById('searchResults');
+
+      if (!query.trim()) {
+        clearBtn.classList.add('hidden');
+        resultsDiv.classList.add('hidden');
+        // Reset all visibility
+        document.querySelectorAll('.container-details').forEach(el => {
+          el.classList.remove('search-hidden', 'search-match');
+        });
+        document.querySelectorAll('.property-row').forEach(el => {
+          el.classList.remove('search-hidden', 'search-match');
+        });
+        document.querySelectorAll('.nav-item').forEach(el => {
+          el.classList.remove('search-hidden');
+        });
+        // Remove highlights
+        document.querySelectorAll('.search-highlight').forEach(el => {
+          el.outerHTML = el.textContent;
+        });
+        return;
+      }
+
+      clearBtn.classList.remove('hidden');
+      const lowerQuery = query.toLowerCase();
+      let matchCount = 0;
+      let containerMatches = 0;
+
+      // Search containers and properties
+      document.querySelectorAll('.container-details').forEach(container => {
+        const containerName = container.dataset.container.toLowerCase();
+        let hasMatch = containerName.includes(lowerQuery);
+
+        // Search properties within container
+        container.querySelectorAll('.property-row').forEach(row => {
+          const propName = row.dataset.property;
+          const propType = row.querySelector('.property-type')?.textContent.toLowerCase() || '';
+
+          if (propName.includes(lowerQuery) || propType.includes(lowerQuery)) {
+            row.classList.remove('search-hidden');
+            row.classList.add('search-match');
+            hasMatch = true;
+            matchCount++;
+          } else {
+            row.classList.add('search-hidden');
+            row.classList.remove('search-match');
+          }
+        });
+
+        if (hasMatch) {
+          container.classList.remove('search-hidden');
+          container.classList.add('search-match');
+          container.open = true;
+          containerMatches++;
+        } else {
+          container.classList.add('search-hidden');
+          container.classList.remove('search-match');
+        }
+      });
+
+      // Update nav items
+      document.querySelectorAll('.nav-item[data-container]').forEach(navItem => {
+        const containerName = navItem.dataset.container.toLowerCase();
+        if (containerName.includes(lowerQuery)) {
+          navItem.classList.remove('search-hidden');
+        } else {
+          navItem.classList.add('search-hidden');
+        }
+      });
+
+      // Show results count
+      resultsDiv.classList.remove('hidden');
+      resultsDiv.textContent = `${containerMatches} container${containerMatches !== 1 ? 's' : ''}, ${matchCount} propert${matchCount !== 1 ? 'ies' : 'y'}`;
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      performSearch('');
+    }
+
+    // Highlight active nav item on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          document.querySelectorAll('.nav-item').forEach(nav => {
+            nav.classList.remove('active');
+            if (nav.getAttribute('href') === '#' + id) {
+              nav.classList.add('active');
+            }
+          });
+        }
+      });
+    }, { threshold: 0.3 });
+
+    document.querySelectorAll('[id]').forEach(el => {
+      if (el.id) observer.observe(el);
+    });
+
+    // Keyboard shortcut for search
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+      }
+      if (e.key === 'Escape') {
+        clearSearch();
+        document.getElementById('searchInput').blur();
+      }
+    });
   </script>
 </body>
 </html>
