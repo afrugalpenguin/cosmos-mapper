@@ -74,14 +74,14 @@ Output is generated in the `./output/` directory.
 ```
 output/
 ├── index.md                 # Main overview with ERD
-├── tenant-db/
+├── ecommerce-store/
 │   ├── _overview.md         # Database ERD and container list
-│   ├── claims.md            # Container schema details
-│   ├── policies.md
+│   ├── products.md          # Container schema details
+│   ├── orders.md
 │   └── ...
-├── platform-db/
+├── ecommerce-platform/
 │   ├── _overview.md
-│   ├── contracts.md
+│   ├── stores.md
 │   └── ...
 └── _cross-database.md       # Cross-database relationships
 ```
@@ -107,9 +107,9 @@ The tool detects and labels these types:
 
 Relationships are detected from:
 
-- Properties ending in `Id` (e.g., `TenantId` → `tenants`)
-- Properties ending in `_id` (e.g., `policy_id` → `policies`)
-- Nested objects with `Id` property (e.g., `Policy.Id` → `policies`)
+- Properties ending in `Id` (e.g., `StoreId` → `stores`)
+- Properties ending in `_id` (e.g., `product_id` → `products`)
+- Nested objects with `Id` property (e.g., `Category.Id` → `categories`)
 - Reference pattern objects
 
 > **Note:** Unlike relational databases, Cosmos DB has no enforced foreign keys. Relationships shown in the ERD are **inferred from naming conventions**, not database constraints. Some detected relationships may be:
@@ -149,7 +149,7 @@ Or download from: https://aka.ms/cosmosdb-emulator
 npm run seed
 ```
 
-This creates `sample-tenant` and `sample-platform` databases with synthetic data.
+This creates `ecommerce-store` and `ecommerce-platform` databases with synthetic e-commerce data (products, orders, customers, stores, suppliers, etc.).
 
 ### 3. Configure and Run
 
@@ -157,9 +157,7 @@ Update `.env`:
 
 ```env
 COSMOS_ENDPOINT=https://localhost:8081
-COSMOS_KEY=YOURKEYHERE
-TENANT_DATABASE=sample-tenant
-PLATFORM_DATABASE=sample-platform
+COSMOS_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==
 ```
 
 Then run:

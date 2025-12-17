@@ -223,7 +223,7 @@ describe('schemaInferrer', () => {
       it('should detect ReferenceObject pattern', () => {
         const schema = inferSchema(sampleDocuments);
 
-        expect(schema.properties.tenant.types).toContain('ReferenceObject');
+        expect(schema.properties.store.types).toContain('ReferenceObject');
       });
     });
   });

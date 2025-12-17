@@ -19,218 +19,314 @@ const client = new CosmosClient({
   key: EMULATOR_KEY
 });
 
-// Sample data - all synthetic/fake
+// Sample data - e-commerce domain (completely synthetic)
 const sampleData = {
-  'sample-tenant': {
-    claims: [
+  'ecommerce-store': {
+    products: [
       {
-        id: 'claim-001',
-        TenantId: 'tenant-001',
-        Reference: 'CLM-2024-0001',
-        Description: 'Property damage from water leak',
-        DateOfLoss: { Value: '2024-01-15T00:00:00Z', Epoch: 1705276800 },
-        Policy: { Id: 'policy-001', Reference: 'POL-2024-001' },
-        Event: { Id: 'event-001', Description: 'Winter Storm Alpha', Code: 'EVT-001' },
-        Status: { Id: 1, Name: 'Open', Code: 'OPN' },
-        Insured: 'Acme Corporation',
-        Country: { Id: 1, Name: 'United Kingdom', Code: 'GB' },
-        CreatedOn: { Value: '2024-01-20T10:00:00Z', Epoch: 1705744800 },
-        IsDeleted: false
+        id: 'prod-001',
+        StoreId: 'store-001',
+        SKU: 'WIDGET-BLU-LG',
+        Name: 'Blue Widget (Large)',
+        Description: 'A large blue widget for all your widget needs',
+        Category: { Id: 1, Name: 'Widgets', Code: 'WDG' },
+        Price: { Amount: 29.99, Currency: { Id: 1, Name: 'US Dollar', Code: 'USD' } },
+        Stock: 150,
+        Supplier: { Id: 'sup-001', Name: 'Widget Co', Code: 'WDGCO' },
+        CreatedOn: { Value: '2024-01-10T10:00:00Z', Epoch: 1704880800 },
+        IsActive: true
       },
       {
-        id: 'claim-002',
-        TenantId: 'tenant-001',
-        Reference: 'CLM-2024-0002',
-        Description: 'Vehicle collision damage',
-        DateOfLoss: { Value: '2024-02-10T00:00:00Z', Epoch: 1707523200 },
-        Policy: { Id: 'policy-002', Reference: 'POL-2024-002' },
-        Event: null,
-        Status: { Id: 2, Name: 'Closed', Code: 'CLS' },
-        Insured: 'Widget Industries',
-        Country: { Id: 2, Name: 'United States', Code: 'US' },
-        State: { Id: 5, Name: 'California', Code: 'CA' },
-        CreatedOn: { Value: '2024-02-12T14:30:00Z', Epoch: 1707747000 },
-        IsDeleted: false
+        id: 'prod-002',
+        StoreId: 'store-001',
+        SKU: 'GADGET-RED-SM',
+        Name: 'Red Gadget (Small)',
+        Description: 'A compact red gadget',
+        Category: { Id: 2, Name: 'Gadgets', Code: 'GDG' },
+        Price: { Amount: 49.99, Currency: { Id: 1, Name: 'US Dollar', Code: 'USD' } },
+        Stock: 75,
+        Supplier: { Id: 'sup-002', Name: 'Gadget World', Code: 'GDGW' },
+        CreatedOn: { Value: '2024-01-12T14:30:00Z', Epoch: 1705070600 },
+        IsActive: true
       },
       {
-        id: 'claim-003',
-        TenantId: 'tenant-001',
-        Reference: 'CLM-2024-0003',
-        Description: 'Liability claim - slip and fall',
-        DateOfLoss: { Value: '2024-03-05T00:00:00Z', Epoch: 1709596800 },
-        Policy: { Id: 'policy-001', Reference: 'POL-2024-001' },
-        Event: { Id: 'event-002', Description: 'Q1 Incidents', Code: 'EVT-002' },
-        Status: { Id: 1, Name: 'Open', Code: 'OPN' },
-        Insured: 'Acme Corporation',
-        Country: { Id: 1, Name: 'United Kingdom', Code: 'GB' },
-        CreatedOn: { Value: '2024-03-06T09:15:00Z', Epoch: 1709715300 },
-        IsDeleted: false
+        id: 'prod-003',
+        StoreId: 'store-001',
+        SKU: 'GIZMO-GRN-MD',
+        Name: 'Green Gizmo (Medium)',
+        Description: 'A medium-sized green gizmo with extra features',
+        Category: { Id: 3, Name: 'Gizmos', Code: 'GZM' },
+        Price: { Amount: 99.99, Currency: { Id: 2, Name: 'Euro', Code: 'EUR' } },
+        Stock: 30,
+        Supplier: { Id: 'sup-001', Name: 'Widget Co', Code: 'WDGCO' },
+        Tags: ['featured', 'new-arrival'],
+        CreatedOn: { Value: '2024-02-01T09:00:00Z', Epoch: 1706778000 },
+        IsActive: true
       }
     ],
-    policies: [
+    orders: [
       {
-        id: 'policy-001',
-        TenantId: 'tenant-001',
-        Reference: 'POL-2024-001',
-        Insured: 'Acme Corporation',
-        InceptionDate: { Value: '2024-01-01T00:00:00Z', Epoch: 1704067200 },
-        ExpiryDate: { Value: '2025-01-01T00:00:00Z', Epoch: 1735689600 },
-        Limit: 1000000,
-        Excess: 10000,
-        Currency: { Id: 1, Name: 'British Pound', Code: 'GBP' },
-        Status: { Id: 1, Name: 'Active', Code: 'ACT' },
-        Product: { Id: 'prod-001', Name: 'Commercial Property', Code: 'CP' },
-        Contract: { Id: 'contract-001', Reference: 'CON-2024-001' },
-        CreatedOn: { Value: '2023-12-15T10:00:00Z', Epoch: 1702634400 }
+        id: 'ord-001',
+        StoreId: 'store-001',
+        OrderNumber: 'ORD-2024-0001',
+        Customer: { Id: 'cust-001', Name: 'Alice Smith', Email: 'alice@example.com' },
+        Status: { Id: 1, Name: 'Pending', Code: 'PND' },
+        Items: [
+          { ProductId: 'prod-001', SKU: 'WIDGET-BLU-LG', Quantity: 2, UnitPrice: 29.99 },
+          { ProductId: 'prod-002', SKU: 'GADGET-RED-SM', Quantity: 1, UnitPrice: 49.99 }
+        ],
+        Subtotal: 109.97,
+        Tax: 9.90,
+        Total: 119.87,
+        ShippingAddress: {
+          Street: '123 Main Street',
+          City: 'Springfield',
+          State: 'IL',
+          PostalCode: '62701',
+          Country: { Id: 1, Name: 'United States', Code: 'US' }
+        },
+        PaymentMethod: { Id: 1, Name: 'Credit Card', Code: 'CC' },
+        OrderDate: { Value: '2024-02-15T16:30:00Z', Epoch: 1708014600 },
+        CreatedOn: { Value: '2024-02-15T16:30:00Z', Epoch: 1708014600 }
       },
       {
-        id: 'policy-002',
-        TenantId: 'tenant-001',
-        Reference: 'POL-2024-002',
-        Insured: 'Widget Industries',
-        InceptionDate: { Value: '2024-01-15T00:00:00Z', Epoch: 1705276800 },
-        ExpiryDate: { Value: '2025-01-15T00:00:00Z', Epoch: 1736899200 },
-        Limit: 500000,
-        Excess: 5000,
-        Currency: { Id: 2, Name: 'US Dollar', Code: 'USD' },
-        Status: { Id: 1, Name: 'Active', Code: 'ACT' },
-        Product: { Id: 'prod-002', Name: 'Motor Fleet', Code: 'MF' },
-        Contract: { Id: 'contract-001', Reference: 'CON-2024-001' },
-        CreatedOn: { Value: '2024-01-10T14:00:00Z', Epoch: 1704895200 }
+        id: 'ord-002',
+        StoreId: 'store-001',
+        OrderNumber: 'ORD-2024-0002',
+        Customer: { Id: 'cust-002', Name: 'Bob Jones', Email: 'bob@example.com' },
+        Status: { Id: 2, Name: 'Shipped', Code: 'SHP' },
+        Items: [
+          { ProductId: 'prod-003', SKU: 'GIZMO-GRN-MD', Quantity: 1, UnitPrice: 99.99 }
+        ],
+        Subtotal: 99.99,
+        Tax: 9.00,
+        Total: 108.99,
+        ShippingAddress: {
+          Street: '456 Oak Avenue',
+          City: 'Portland',
+          State: 'OR',
+          PostalCode: '97201',
+          Country: { Id: 1, Name: 'United States', Code: 'US' }
+        },
+        PaymentMethod: { Id: 2, Name: 'PayPal', Code: 'PP' },
+        TrackingNumber: 'TRK-123456789',
+        OrderDate: { Value: '2024-02-18T10:15:00Z', Epoch: 1708251300 },
+        ShippedDate: { Value: '2024-02-19T14:00:00Z', Epoch: 1708351200 },
+        CreatedOn: { Value: '2024-02-18T10:15:00Z', Epoch: 1708251300 }
       }
     ],
-    events: [
+    customers: [
       {
-        id: 'event-001',
-        TenantId: 'tenant-001',
-        Code: 'EVT-001',
-        Description: 'Winter Storm Alpha',
-        DateOfEvent: { Value: '2024-01-14T00:00:00Z', Epoch: 1705190400 },
-        Country: { Id: 1, Name: 'United Kingdom', Code: 'GB' },
-        Status: { Id: 1, Name: 'Active', Code: 'ACT' },
-        CreatedOn: { Value: '2024-01-14T12:00:00Z', Epoch: 1705233600 }
+        id: 'cust-001',
+        StoreId: 'store-001',
+        Email: 'alice@example.com',
+        Name: 'Alice Smith',
+        Phone: '+1-555-0101',
+        Addresses: [
+          {
+            Type: 'shipping',
+            Street: '123 Main Street',
+            City: 'Springfield',
+            State: 'IL',
+            PostalCode: '62701',
+            Country: { Id: 1, Name: 'United States', Code: 'US' },
+            IsDefault: true
+          }
+        ],
+        MemberSince: { Value: '2023-06-15T00:00:00Z', Epoch: 1686787200 },
+        TotalOrders: 5,
+        TotalSpent: 450.50,
+        LoyaltyTier: { Id: 2, Name: 'Silver', Code: 'SLV' },
+        CreatedOn: { Value: '2023-06-15T09:00:00Z', Epoch: 1686819600 }
       },
       {
-        id: 'event-002',
-        TenantId: 'tenant-001',
-        Code: 'EVT-002',
-        Description: 'Q1 Incidents',
-        DateOfEvent: { Value: '2024-03-01T00:00:00Z', Epoch: 1709251200 },
-        Country: { Id: 1, Name: 'United Kingdom', Code: 'GB' },
-        Status: { Id: 1, Name: 'Active', Code: 'ACT' },
-        CreatedOn: { Value: '2024-03-01T08:00:00Z', Epoch: 1709280000 }
+        id: 'cust-002',
+        StoreId: 'store-001',
+        Email: 'bob@example.com',
+        Name: 'Bob Jones',
+        Phone: '+1-555-0102',
+        Addresses: [
+          {
+            Type: 'shipping',
+            Street: '456 Oak Avenue',
+            City: 'Portland',
+            State: 'OR',
+            PostalCode: '97201',
+            Country: { Id: 1, Name: 'United States', Code: 'US' },
+            IsDefault: true
+          }
+        ],
+        MemberSince: { Value: '2024-01-20T00:00:00Z', Epoch: 1705708800 },
+        TotalOrders: 1,
+        TotalSpent: 108.99,
+        LoyaltyTier: { Id: 1, Name: 'Bronze', Code: 'BRZ' },
+        CreatedOn: { Value: '2024-01-20T11:30:00Z', Epoch: 1705750200 }
       }
     ],
-    movements: [
+    reviews: [
       {
-        id: 'mov-001',
-        TenantId: 'tenant-001',
-        ClaimId: 'claim-001',
-        Type: { Id: 1, Name: 'Reserve', Code: 'RES' },
-        Amount: 25000,
-        Currency: { Id: 1, Name: 'British Pound', Code: 'GBP' },
-        TransactionDate: { Value: '2024-01-21T00:00:00Z', Epoch: 1705795200 },
-        CreatedOn: { Value: '2024-01-21T11:00:00Z', Epoch: 1705834800 }
+        id: 'rev-001',
+        StoreId: 'store-001',
+        ProductId: 'prod-001',
+        CustomerId: 'cust-001',
+        Rating: 5,
+        Title: 'Great widget!',
+        Comment: 'This widget exceeded my expectations. Highly recommend.',
+        Verified: true,
+        HelpfulVotes: 12,
+        CreatedOn: { Value: '2024-02-20T08:00:00Z', Epoch: 1708416000 }
       },
       {
-        id: 'mov-002',
-        TenantId: 'tenant-001',
-        ClaimId: 'claim-001',
-        Type: { Id: 2, Name: 'Payment', Code: 'PAY' },
-        Amount: 15000,
-        Currency: { Id: 1, Name: 'British Pound', Code: 'GBP' },
-        TransactionDate: { Value: '2024-02-15T00:00:00Z', Epoch: 1707955200 },
-        CreatedOn: { Value: '2024-02-15T10:30:00Z', Epoch: 1707993000 }
+        id: 'rev-002',
+        StoreId: 'store-001',
+        ProductId: 'prod-002',
+        CustomerId: 'cust-002',
+        Rating: 4,
+        Title: 'Good gadget, minor issues',
+        Comment: 'Works well overall but packaging could be better.',
+        Verified: true,
+        HelpfulVotes: 3,
+        CreatedOn: { Value: '2024-02-21T15:30:00Z', Epoch: 1708529400 }
       }
     ],
-    premiums: [
+    inventory: [
       {
-        id: 'prem-001',
-        TenantId: 'tenant-001',
-        Policy: { Id: 'policy-001', Reference: { Value: 'POL-2024-001', Lower: 'pol-2024-001' } },
-        Amount: 50000,
-        Currency: { Id: 1, Name: 'British Pound', Code: 'GBP' },
-        TransactionType: { Id: 1, Name: 'Gross Premium', Code: 'GRP' },
-        TransactionDate: { Value: '2024-01-05T00:00:00Z', Epoch: 1704412800 },
-        CreatedOn: { Value: '2024-01-05T09:00:00Z', Epoch: 1704445200 }
-      }
-    ],
-    importlogs: [
+        id: 'inv-001',
+        StoreId: 'store-001',
+        ProductId: 'prod-001',
+        WarehouseId: 'wh-001',
+        Quantity: 100,
+        ReservedQuantity: 5,
+        ReorderLevel: 20,
+        LastRestocked: { Value: '2024-02-01T00:00:00Z', Epoch: 1706745600 },
+        UpdatedOn: { Value: '2024-02-15T17:00:00Z', Epoch: 1708016400 }
+      },
       {
-        id: 'imp-001',
-        TenantId: 'tenant-001',
-        FileName: 'claims_jan_2024.csv',
-        Status: { Id: 1, Name: 'Completed', Code: 'DONE' },
-        RecordsProcessed: 150,
-        RecordsFailed: 2,
-        StartedOn: { Value: '2024-01-20T08:00:00Z', Epoch: 1705737600 },
-        CompletedOn: { Value: '2024-01-20T08:15:00Z', Epoch: 1705738500 }
+        id: 'inv-002',
+        StoreId: 'store-001',
+        ProductId: 'prod-002',
+        WarehouseId: 'wh-001',
+        Quantity: 50,
+        ReservedQuantity: 0,
+        ReorderLevel: 15,
+        LastRestocked: { Value: '2024-01-15T00:00:00Z', Epoch: 1705276800 },
+        UpdatedOn: { Value: '2024-02-10T09:00:00Z', Epoch: 1707555600 }
       }
     ]
   },
-  'sample-platform': {
-    tenants: [
+  'ecommerce-platform': {
+    stores: [
       {
-        id: 'tenant-001',
-        Name: 'Demo Insurance Ltd',
+        id: 'store-001',
+        Name: 'Demo Shop',
         Code: 'DEMO',
+        URL: 'https://demo.example.com',
+        Owner: { Id: 'user-001', Name: 'Demo Admin', Email: 'admin@example.com' },
         Status: { Id: 1, Name: 'Active', Code: 'ACT' },
-        CreatedOn: { Value: '2023-01-01T00:00:00Z', Epoch: 1672531200 },
-        Settings: { MaxUsers: 50, AllowImport: true }
+        Plan: { Id: 2, Name: 'Professional', Code: 'PRO' },
+        Settings: {
+          Currency: 'USD',
+          Timezone: 'America/New_York',
+          TaxRate: 9.0
+        },
+        CreatedOn: { Value: '2023-01-01T00:00:00Z', Epoch: 1672531200 }
       },
       {
-        id: 'tenant-002',
-        Name: 'Test Underwriters',
+        id: 'store-002',
+        Name: 'Test Store',
         Code: 'TEST',
+        URL: 'https://test.example.com',
+        Owner: { Id: 'user-002', Name: 'Test User', Email: 'test@example.com' },
         Status: { Id: 1, Name: 'Active', Code: 'ACT' },
-        CreatedOn: { Value: '2023-06-01T00:00:00Z', Epoch: 1685577600 },
-        Settings: { MaxUsers: 25, AllowImport: true }
+        Plan: { Id: 1, Name: 'Starter', Code: 'STR' },
+        Settings: {
+          Currency: 'EUR',
+          Timezone: 'Europe/London',
+          TaxRate: 20.0
+        },
+        CreatedOn: { Value: '2023-06-15T00:00:00Z', Epoch: 1686787200 }
       }
     ],
-    contracts: [
+    suppliers: [
       {
-        id: 'contract-001',
-        TenantId: 'tenant-001',
-        Reference: 'CON-2024-001',
-        Broker: { Id: 'broker-001', Name: 'Sample Brokers Ltd', Code: 'SBL' },
-        Share: 100,
-        InceptionDate: { Value: '2024-01-01T00:00:00Z', Epoch: 1704067200 },
-        CreatedOn: { Value: '2023-12-01T10:00:00Z', Epoch: 1701424800 }
+        id: 'sup-001',
+        Name: 'Widget Co',
+        Code: 'WDGCO',
+        ContactEmail: 'orders@widgetco.example.com',
+        ContactPhone: '+1-555-1000',
+        Address: {
+          Street: '100 Industrial Way',
+          City: 'Chicago',
+          State: 'IL',
+          PostalCode: '60601',
+          Country: { Id: 1, Name: 'United States', Code: 'US' }
+        },
+        Status: { Id: 1, Name: 'Active', Code: 'ACT' },
+        Rating: 4.5,
+        CreatedOn: { Value: '2022-01-01T00:00:00Z', Epoch: 1640995200 }
+      },
+      {
+        id: 'sup-002',
+        Name: 'Gadget World',
+        Code: 'GDGW',
+        ContactEmail: 'sales@gadgetworld.example.com',
+        ContactPhone: '+1-555-2000',
+        Address: {
+          Street: '200 Tech Boulevard',
+          City: 'San Jose',
+          State: 'CA',
+          PostalCode: '95101',
+          Country: { Id: 1, Name: 'United States', Code: 'US' }
+        },
+        Status: { Id: 1, Name: 'Active', Code: 'ACT' },
+        Rating: 4.2,
+        CreatedOn: { Value: '2022-06-01T00:00:00Z', Epoch: 1654041600 }
       }
     ],
-    security: [
+    warehouses: [
       {
-        id: 'sec-001',
-        UserId: 'user-001',
-        TenantId: 'tenant-001',
-        Role: { Id: 1, Name: 'Administrator', Code: 'ADMIN' },
-        Permissions: ['read', 'write', 'delete', 'admin'],
-        CreatedOn: { Value: '2023-01-15T09:00:00Z', Epoch: 1673773200 }
+        id: 'wh-001',
+        Name: 'Main Warehouse',
+        Code: 'MAIN',
+        Address: {
+          Street: '500 Logistics Drive',
+          City: 'Memphis',
+          State: 'TN',
+          PostalCode: '38118',
+          Country: { Id: 1, Name: 'United States', Code: 'US' }
+        },
+        Capacity: 10000,
+        CurrentStock: 3500,
+        Status: { Id: 1, Name: 'Active', Code: 'ACT' },
+        CreatedOn: { Value: '2022-01-01T00:00:00Z', Epoch: 1640995200 }
       }
     ],
-    dictionaries: [
+    categories: [
       {
-        id: 'dict-001',
-        Type: 'Status',
-        Code: 'OPN',
-        Name: 'Open',
+        id: 'cat-001',
+        Code: 'WDG',
+        Name: 'Widgets',
+        Description: 'Various widgets for home and office',
+        ParentId: null,
         SortOrder: 1,
         IsActive: true
       },
       {
-        id: 'dict-002',
-        Type: 'Status',
-        Code: 'CLS',
-        Name: 'Closed',
+        id: 'cat-002',
+        Code: 'GDG',
+        Name: 'Gadgets',
+        Description: 'Electronic gadgets and accessories',
+        ParentId: null,
         SortOrder: 2,
         IsActive: true
       },
       {
-        id: 'dict-003',
-        Type: 'Country',
-        Code: 'GB',
-        Name: 'United Kingdom',
-        SortOrder: 1,
+        id: 'cat-003',
+        Code: 'GZM',
+        Name: 'Gizmos',
+        Description: 'Specialty gizmos and tools',
+        ParentId: null,
+        SortOrder: 3,
         IsActive: true
       }
     ]
@@ -290,8 +386,6 @@ async function seedDatabase() {
     console.log('  1. Update .env:');
     console.log('     COSMOS_ENDPOINT=https://localhost:8081');
     console.log('     COSMOS_KEY=C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==');
-    console.log('     TENANT_DATABASE=sample-tenant');
-    console.log('     PLATFORM_DATABASE=sample-platform');
     console.log('');
     console.log('  2. Run: npm start');
     console.log('');
