@@ -219,19 +219,19 @@ describe('markdownGenerator', () => {
     it('should show ambiguous relationships with multiple databases note', async () => {
       const data = {
         databases: {
-          platform: { containers: ['processing'] },
-          'store-a': { containers: ['events'] },
-          'store-b': { containers: ['events'] }
+          platform: { containers: ['inventory'] },
+          'store-a': { containers: ['products'] },
+          'store-b': { containers: ['products'] }
         },
         containerSchemas: {
-          processing: { properties: { id: { path: 'id', name: 'id', parentPath: null, types: ['guid'], isRequired: true, examples: [] } } },
-          events: { properties: { id: { path: 'id', name: 'id', parentPath: null, types: ['guid'], isRequired: true, examples: [] } } }
+          inventory: { properties: { id: { path: 'id', name: 'id', parentPath: null, types: ['guid'], isRequired: true, examples: [] } } },
+          products: { properties: { id: { path: 'id', name: 'id', parentPath: null, types: ['guid'], isRequired: true, examples: [] } } }
         },
         relationships: [{
-          fromContainer: 'processing',
+          fromContainer: 'inventory',
           fromDatabase: 'platform',
-          fromProperty: 'EventId',
-          toContainer: 'events',
+          fromProperty: 'ProductId',
+          toContainer: 'products',
           toDatabase: 'store-a',
           cardinality: 'many-to-one',
           isCrossDatabase: true,
@@ -244,8 +244,8 @@ describe('markdownGenerator', () => {
 
       await generateDocumentation(data, '/output');
 
-      const processingPath = Object.keys(writtenFiles).find(p => p.includes('processing.md'));
-      expect(writtenFiles[processingPath]).toContain('multiple databases');
+      const inventoryPath = Object.keys(writtenFiles).find(p => p.includes('inventory.md'));
+      expect(writtenFiles[inventoryPath]).toContain('multiple databases');
     });
   });
 

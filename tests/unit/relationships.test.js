@@ -110,23 +110,23 @@ describe('relationships', () => {
       it('should detect SimpleReference type pattern', () => {
         const schema = {
           properties: {
-            Contract: {
-              path: 'Contract',
-              name: 'Contract',
+            Supplier: {
+              path: 'Supplier',
+              name: 'Supplier',
               parentPath: null,
               types: ['SimpleReference']
             }
           }
         };
         const containers = [
-          { name: 'categories', database: 'db' },
-          { name: 'contracts', database: 'db' }
+          { name: 'products', database: 'db' },
+          { name: 'suppliers', database: 'db' }
         ];
 
-        const rels = detectRelationships('categories', 'db', schema, containers);
+        const rels = detectRelationships('products', 'db', schema, containers);
 
         expect(rels.length).toBe(1);
-        expect(rels[0].toContainer).toBe('contracts');
+        expect(rels[0].toContainer).toBe('suppliers');
       });
 
       it('should detect property name matching existing container (Pattern 5)', () => {
@@ -227,22 +227,22 @@ describe('relationships', () => {
       it('should detect ambiguous cross-database relationships', () => {
         const schema = {
           properties: {
-            EventId: {
-              path: 'EventId',
-              name: 'EventId',
+            ProductId: {
+              path: 'ProductId',
+              name: 'ProductId',
               parentPath: null,
               types: ['guid']
             }
           }
         };
         const containers = [
-          { name: 'processing', database: 'platform' },
-          { name: 'events', database: 'store-a' },
-          { name: 'events', database: 'store-b' },
-          { name: 'events', database: 'store-c' }
+          { name: 'inventory', database: 'platform' },
+          { name: 'products', database: 'store-a' },
+          { name: 'products', database: 'store-b' },
+          { name: 'products', database: 'store-c' }
         ];
 
-        const rels = detectRelationships('processing', 'platform', schema, containers);
+        const rels = detectRelationships('inventory', 'platform', schema, containers);
 
         expect(rels[0].isAmbiguous).toBe(true);
         expect(rels[0].possibleDatabases.length).toBe(3);
@@ -276,27 +276,27 @@ describe('relationships', () => {
       it('should match singular container names (categories -> category)', () => {
         const schema = {
           properties: {
-            Product: {
-              path: 'Product',
-              name: 'Product',
+            Category: {
+              path: 'Category',
+              name: 'Category',
               parentPath: null,
               types: ['SimpleReference']
             }
           }
         };
         const containers = [
-          { name: 'orders', database: 'db' },
-          { name: 'product', database: 'db' }  // Singular form
+          { name: 'products', database: 'db' },
+          { name: 'category', database: 'db' }  // Singular form
         ];
 
-        const rels = detectRelationships('orders', 'db', schema, containers);
+        const rels = detectRelationships('products', 'db', schema, containers);
 
-        expect(rels[0].toContainer).toBe('product');
+        expect(rels[0].toContainer).toBe('category');
       });
 
       it('should handle special plural (ies -> y)', () => {
-        // 'CategoriesId' -> 'categories' -> tries: 'categories', 'categoriess', 'categorie', 'product'
-        // The 'product' singular matches the container
+        // 'CategoriesId' -> 'categories' -> tries: 'categories', 'categoriess', 'categorie', 'category'
+        // The 'category' singular matches the container
         const schema = {
           properties: {
             CategoriesId: {
@@ -308,13 +308,13 @@ describe('relationships', () => {
           }
         };
         const containers = [
-          { name: 'orders', database: 'db' },
-          { name: 'product', database: 'db' }
+          { name: 'products', database: 'db' },
+          { name: 'category', database: 'db' }
         ];
 
-        const rels = detectRelationships('orders', 'db', schema, containers);
+        const rels = detectRelationships('products', 'db', schema, containers);
 
-        expect(rels[0].toContainer).toBe('product');
+        expect(rels[0].toContainer).toBe('category');
       });
     });
 
@@ -417,7 +417,7 @@ describe('relationships', () => {
     it('should create inverted relationships', () => {
       const rels = [{
         fromContainer: 'orders',
-        fromDatabase: 'store',
+        fromDatabase: 'store-a',
         fromProperty: 'StoreId',
         toContainer: 'stores',
         toDatabase: 'platform',
@@ -440,7 +440,7 @@ describe('relationships', () => {
     it('should NOT invert orphan relationships', () => {
       const rels = [{
         fromContainer: 'orders',
-        fromDatabase: 'store',
+        fromDatabase: 'store-a',
         fromProperty: 'UnknownId',
         toContainer: 'unknown',
         toDatabase: null,
@@ -462,14 +462,14 @@ describe('relationships', () => {
     it('should group relationships by source container', () => {
       const rels = [
         { fromContainer: 'orders', toContainer: 'stores' },
-        { fromContainer: 'orders', toContainer: 'categories' },
-        { fromContainer: 'categories', toContainer: 'stores' }
+        { fromContainer: 'orders', toContainer: 'products' },
+        { fromContainer: 'products', toContainer: 'stores' }
       ];
 
       const grouped = groupRelationshipsByContainer(rels);
 
       expect(grouped.orders.length).toBe(2);
-      expect(grouped.categories.length).toBe(1);
+      expect(grouped.products.length).toBe(1);
     });
 
     it('should handle empty relationships', () => {

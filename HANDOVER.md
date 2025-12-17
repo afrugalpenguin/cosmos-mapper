@@ -49,7 +49,7 @@ npm run test:coverage  # Generate coverage report
 
 1. **buildPropertyTree** - Has a bug with nested properties in `findInTree` function. The function returns the children object instead of the parent node. Low priority as this function isn't used in production output.
 
-2. **Pluralization** - The relationship matcher uses simple pluralization (`+ 's'`), so `ProductId` won't match `categories` (only `products`). Works correctly for regular plurals like `store` → `stores`.
+2. **Pluralization** - The relationship matcher uses simple pluralization (`+ 's'`), so `CategoryId` won't match `categories` (only `categorys`). Works correctly for regular plurals like `store` → `stores`.
 
 ### Next Steps (Optional)
 

@@ -368,12 +368,12 @@ describe('mermaidGenerator', () => {
     it('should extract label from property name', () => {
       const schemas = {
         orders: { properties: {} },
-        categories: { properties: {} }
+        products: { properties: {} }
       };
       const relationships = [{
         fromContainer: 'orders',
         fromProperty: 'ProductId',
-        toContainer: 'categories',
+        toContainer: 'products',
         cardinality: 'many-to-one',
         isOrphan: false
       }];
@@ -387,12 +387,12 @@ describe('mermaidGenerator', () => {
     it('should handle nested property paths in label', () => {
       const schemas = {
         orders: { properties: {} },
-        categories: { properties: {} }
+        products: { properties: {} }
       };
       const relationships = [{
         fromContainer: 'orders',
         fromProperty: 'Details.ProductId',
-        toContainer: 'categories',
+        toContainer: 'products',
         cardinality: 'many-to-one',
         isOrphan: false
       }];
