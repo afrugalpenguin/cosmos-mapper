@@ -39,7 +39,7 @@ export function detectRelationships(containerName, databaseName, schema, allCont
   const properties = schema.properties || {};
 
   for (const prop of Object.values(properties)) {
-    const refs = findReferencesInProperty(prop, containerName);
+    const refs = findReferencesInProperty(prop, containerName, allContainers);
 
     for (const ref of refs) {
       const matchResult = matchToContainer(ref.targetName, allContainers, containerName, databaseName);
@@ -71,8 +71,11 @@ export function detectRelationships(containerName, databaseName, schema, allCont
 
 /**
  * Finds potential references within a property.
+ * @param {object} prop - Property to analyse
+ * @param {string} sourceContainer - Name of source container
+ * @param {ContainerInfo[]} allContainers - All known containers for name matching
  */
-function findReferencesInProperty(prop, sourceContainer) {
+function findReferencesInProperty(prop, sourceContainer, allContainers) {
   const refs = [];
   const path = prop.path;
   const name = prop.name;
@@ -107,7 +110,41 @@ function findReferencesInProperty(prop, sourceContainer) {
     }
   }
 
+  // Pattern 5: Property name matches an existing container name
+  // Only create relationship if target container actually exists (no orphans)
+  // Skip if already matched by other patterns
+  const alreadyMatched = refs.some(r => r.targetName === name.toLowerCase());
+  if (!alreadyMatched && name !== 'id' && name.toLowerCase() !== sourceContainer.toLowerCase()) {
+    // Check if property name matches any container (with plural/singular variations)
+    const containerExists = doesContainerExist(name, allContainers, sourceContainer);
+    if (containerExists) {
+      refs.push({ propertyPath: path, targetName: name.toLowerCase() });
+    }
+  }
+
   return refs;
+}
+
+/**
+ * Checks if a container with the given name exists (with plural/singular variations).
+ * @param {string} name - Property name to check
+ * @param {ContainerInfo[]} containers - All known containers
+ * @param {string} sourceContainer - Source container to exclude
+ * @returns {boolean} Whether a matching container exists
+ */
+function doesContainerExist(name, containers, sourceContainer) {
+  const normalised = name.toLowerCase();
+  const namesToTry = [
+    normalised,
+    normalised + 's', // plural
+    normalised.endsWith('s') ? normalised.slice(0, -1) : null, // singular
+    normalised.endsWith('ies') ? normalised.slice(0, -3) + 'y' : null // policies -> policy
+  ].filter(Boolean);
+
+  return containers.some(c =>
+    namesToTry.includes(c.name.toLowerCase()) &&
+    c.name.toLowerCase() !== sourceContainer.toLowerCase()
+  );
 }
 
 /**
