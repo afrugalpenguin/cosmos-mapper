@@ -128,6 +128,54 @@ describe('relationships', () => {
         expect(rels.length).toBe(1);
         expect(rels[0].toContainer).toBe('contracts');
       });
+
+      it('should detect property name matching existing container (Pattern 5)', () => {
+        // Property name 'Supplier' matches container 'suppliers' (with plural)
+        // This should work even without ReferenceObject type
+        const schema = {
+          properties: {
+            Supplier: {
+              path: 'Supplier',
+              name: 'Supplier',
+              parentPath: null,
+              types: ['object']  // Regular object, NOT ReferenceObject
+            }
+          }
+        };
+        const containers = [
+          { name: 'products', database: 'db' },
+          { name: 'suppliers', database: 'db' }
+        ];
+
+        const rels = detectRelationships('products', 'db', schema, containers);
+
+        expect(rels.length).toBe(1);
+        expect(rels[0].fromProperty).toBe('Supplier');
+        expect(rels[0].toContainer).toBe('suppliers');
+      });
+
+      it('should NOT create relationship when property name does not match any container (Pattern 5)', () => {
+        // Property 'Warehouse' should NOT create orphan if no warehouse/warehouses container exists
+        const schema = {
+          properties: {
+            Warehouse: {
+              path: 'Warehouse',
+              name: 'Warehouse',
+              parentPath: null,
+              types: ['object']
+            }
+          }
+        };
+        const containers = [
+          { name: 'products', database: 'db' },
+          { name: 'categories', database: 'db' }  // No 'warehouse' or 'warehouses' container
+        ];
+
+        const rels = detectRelationships('products', 'db', schema, containers);
+
+        // Should have no relationships (Pattern 5 only fires when container exists)
+        expect(rels.length).toBe(0);
+      });
     });
 
     describe('container matching', () => {
