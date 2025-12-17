@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 
+HANDOVER.md
+
 # Environment variables (contains secrets)
 .env
 
