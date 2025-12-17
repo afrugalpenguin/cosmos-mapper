@@ -197,7 +197,7 @@ This creates `ecommerce-store` and `ecommerce-platform` databases with synthetic
 
 ### 3. Configure and Run
 
-Update `.env`:
+Update `.env` (or use the well-known emulator defaults):
 
 ```env
 COSMOS_ENDPOINT=https://localhost:8081
