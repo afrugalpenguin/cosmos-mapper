@@ -36,6 +36,7 @@ export async function generateHtmlDocumentation(data, outputDir) {
 
   // Generate per-database ERDs
   const databaseERDs = {};
+  const databaseSimpleERDs = {};
   for (const [dbName, dbInfo] of Object.entries(databases)) {
     const dbSchemas = {};
     for (const containerName of dbInfo.containers) {
@@ -45,10 +46,19 @@ export async function generateHtmlDocumentation(data, outputDir) {
       }
     }
 
+    // Filter to intra-database relationships only for the simple ERD
+    const dbIntraRelationships = relationships.filter(r =>
+      r.fromDatabase === dbName && r.toDatabase === dbName && !r.isOrphan
+    );
+
     const dbRelationships = relationships.filter(r =>
       dbInfo.containers.includes(r.fromContainer) || dbInfo.containers.includes(r.toContainer)
     ).filter(r => !r.isOrphan);
 
+    // Simple ERD (relationships only, no properties)
+    databaseSimpleERDs[dbName] = generateSimpleERD(dbInfo.containers, dbIntraRelationships);
+
+    // Detailed ERD (with properties)
     databaseERDs[dbName] = generateERD(dbSchemas, dbRelationships, {
       title: `${dbName} ERD`,
       maxPropertiesPerEntity: 8
@@ -63,6 +73,7 @@ export async function generateHtmlDocumentation(data, outputDir) {
     timestamp,
     simpleERD,
     databaseERDs,
+    databaseSimpleERDs,
     // Helper functions
     getRootProperties,
     getTypeDisplayName

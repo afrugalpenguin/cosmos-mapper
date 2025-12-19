@@ -2,6 +2,23 @@
 
 A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB documentation and analysis tool.
 
+## Current Status (v1.3)
+
+**Completed:**
+- Schema inference with type detection (GUIDs, dates, reference objects, etc.)
+- Relationship detection from naming conventions
+- **Relationship confidence scoring** with multi-factor analysis
+- **Cardinality analysis** (one-to-one vs many-to-one)
+- **Denormalization/snapshot detection**
+- Cross-database relationship support
+- HTML output with collapsible sections and search
+- Mermaid ERD diagram generation
+- Config file support with CLI overrides
+- Container include/exclude patterns
+- 196 unit tests with 95% coverage
+
+---
+
 ## Phase 1: Enhanced Documentation
 
 **Goal:** Make the generated documentation more useful and comprehensive.
@@ -34,7 +51,8 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 **Goal:** Support different documentation platforms and use cases.
 
 ### Output Formats
-- [ ] HTML output with collapsible sections and search
+- [x] HTML output with collapsible sections and search ✅
+- [x] Mermaid ERD diagrams in both HTML and Markdown ✅
 - [ ] Confluence wiki format
 - [ ] Notion export
 - [ ] PDF generation (via HTML)
@@ -42,6 +60,7 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - [ ] OpenAPI-style schema definitions
 
 ### Template System
+- [x] EJS template system for HTML output ✅
 - [ ] Customisable Markdown templates
 - [ ] Branding/styling options for HTML output
 - [ ] Custom header/footer content
@@ -61,9 +80,10 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - [ ] PR comments with schema changes summary
 
 ### Configuration
-- [ ] Config file support (`cosmosmapper.config.json`)
+- [x] Config file support (`cosmosmapper.config.json`) ✅
+- [x] CLI argument overrides ✅
 - [ ] Environment-specific profiles (dev, staging, prod)
-- [ ] Container include/exclude patterns
+- [x] Container include/exclude patterns ✅
 - [ ] Sensitive field redaction rules
 
 ---
@@ -80,16 +100,20 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - [ ] Estimate storage costs based on schema
 
 ### Data Quality Metrics
+- [x] Field frequency/population rates ✅
 - [ ] Null percentage per field
 - [ ] Value distribution summaries
 - [ ] Outlier detection
 - [ ] Data freshness indicators (last modified timestamps)
 
 ### Relationship Insights
-- [ ] Orphaned reference detection
+- [x] Orphaned reference detection ✅
+- [x] Relationship confidence scoring (referential integrity, type consistency, naming pattern, frequency) ✅
+- [x] Cardinality analysis (one-to-one vs many-to-one) ✅
+- [x] Denormalization/snapshot detection ✅
+- [x] Cross-database relationship detection ✅
 - [ ] Circular dependency warnings
 - [ ] Missing inverse relationships
-- [ ] Relationship strength metrics (how often references exist)
 
 ---
 
@@ -151,8 +175,9 @@ These are smaller improvements that add value without major architectural change
 - [ ] Verbose mode for debugging (`--verbose`)
 - [ ] `--container` flag to document single container
 - [ ] Copy-to-clipboard for Mermaid diagrams
-- [ ] Validate config/connection before sampling
+- [x] Validate config/connection before sampling ✅
 - [ ] Better error messages with troubleshooting hints
+- [x] Comprehensive test suite (196 tests, 95% coverage) ✅
 
 ---
 
@@ -170,14 +195,15 @@ These are smaller improvements that add value without major architectural change
 
 ### High Impact, Lower Effort
 1. Schema change detection (Phase 1)
-2. Config file support (Phase 3)
-3. HTML output with search (Phase 2)
+2. ~~Config file support (Phase 3)~~ ✅ Done
+3. ~~HTML output with search (Phase 2)~~ ✅ Done
 4. `--watch` mode (Quick Win)
 
 ### High Impact, Higher Effort
 1. CI/CD pipeline integration (Phase 3)
 2. Interactive web UI (Phase 5)
-3. Data quality metrics (Phase 4)
+3. ~~Relationship confidence scoring (Phase 4)~~ ✅ Done
+4. Data quality metrics (Phase 4)
 
 ### Nice to Have
 1. Multiple output formats beyond HTML/Markdown
@@ -188,14 +214,16 @@ These are smaller improvements that add value without major architectural change
 
 ## Version Milestones
 
-| Version | Focus | Key Features |
-|---------|-------|--------------|
-| 1.0 | MVP | Current functionality |
-| 1.1 | Polish | Quick wins, better errors, config file |
-| 1.2 | Change Detection | Schema versioning, diff reports |
-| 2.0 | Multi-Format | HTML output, templates, CI/CD |
-| 3.0 | Analysis | Insights, metrics, recommendations |
-| 4.0 | Interactive | Web UI, visual exploration |
+| Version | Focus | Key Features | Status |
+|---------|-------|--------------|--------|
+| 1.0 | MVP | Schema inference, relationship detection, Markdown output | ✅ Complete |
+| 1.1 | Polish | Config file, CLI args, container filtering, test suite | ✅ Complete |
+| 1.2 | HTML & ERDs | HTML output with search, Mermaid ERD diagrams | ✅ Complete |
+| 1.3 | Confidence | Relationship confidence scoring, cardinality analysis, validation | ✅ Complete |
+| 1.4 | Change Detection | Schema versioning, diff reports | Planned |
+| 2.0 | CI/CD | Pipeline integration, exit codes, auto-commit | Planned |
+| 3.0 | Analysis | Data quality metrics, recommendations | Planned |
+| 4.0 | Interactive | Web UI, visual exploration | Planned |
 
 ---
 
