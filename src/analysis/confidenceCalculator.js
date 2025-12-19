@@ -7,7 +7,8 @@ import {
   validateReferentialIntegrity,
   validateTypeConsistency,
   validateFrequency,
-  detectDenormalization
+  detectDenormalization,
+  analyseCardinality
 } from './relationshipValidator.js';
 
 /**
@@ -124,6 +125,19 @@ export async function calculateConfidence(
     nestedFields: denormResult.nestedFields,
     reason: denormResult.reason
   };
+
+  // Factor 6: Cardinality (informational, requires client)
+  if (client) {
+    const cardResult = await analyseCardinality(client, relationship);
+    factors.cardinality = {
+      type: cardResult.cardinality,
+      avgReferences: cardResult.avgReferencesPerTarget,
+      maxReferences: cardResult.maxReferencesPerTarget,
+      singleRatio: cardResult.singleReferenceRatio,
+      confidence: cardResult.confidence,
+      error: cardResult.error
+    };
+  }
 
   // Calculate composite score
   const compositeScore = calculateCompositeScore(factors, weights);
@@ -294,6 +308,12 @@ function generateSummary(score, factors, relationship) {
 
   if (factors.denormalization?.isDenormalized === true) {
     parts.push('(denormalized)');
+  }
+
+  if (factors.cardinality?.type === 'one-to-one') {
+    parts.push('[1:1]');
+  } else if (factors.cardinality?.type === 'many-to-one') {
+    parts.push('[N:1]');
   }
 
   if (relationship.isCrossDatabase) {
