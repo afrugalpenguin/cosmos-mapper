@@ -320,6 +320,99 @@ export function detectDenormalization(relationship, sourceSchema) {
 }
 
 /**
+ * Cardinality analysis result.
+ * @typedef {Object} CardinalityResult
+ * @property {string} cardinality - 'one-to-one', 'many-to-one', or 'mixed'
+ * @property {string} avgReferencesPerTarget - Average references per target ID
+ * @property {number} maxReferencesPerTarget - Maximum references to a single target
+ * @property {string} singleReferenceRatio - Percentage of targets with single reference
+ * @property {number} confidence - Confidence score (0-100)
+ * @property {string} [error] - Error message if analysis failed
+ */
+
+/**
+ * Analyse cardinality of relationship.
+ * Determines if relationship is one-to-one or many-to-one.
+ * @param {import('@azure/cosmos').CosmosClient} client - Cosmos client
+ * @param {import('./relationships.js').Relationship} relationship - Relationship to analyse
+ * @param {number} sampleSize - Maximum FK values to analyse
+ * @returns {Promise<CardinalityResult>}
+ */
+export async function analyseCardinality(client, relationship, sampleSize = 1000) {
+  const { fromDatabase, fromContainer, fromProperty, isOrphan } = relationship;
+
+  if (isOrphan) {
+    return {
+      cardinality: 'unknown',
+      confidence: 0,
+      error: 'Cannot analyse cardinality for orphan relationship'
+    };
+  }
+
+  // Build property accessor for nested paths
+  const accessor = fromProperty.split('.').reduce((acc, part) => `${acc}["${part}"]`, 'c');
+
+  const querySpec = {
+    query: `
+      SELECT ${accessor} as fkValue, COUNT(1) as refCount
+      FROM c
+      WHERE IS_DEFINED(${accessor}) AND ${accessor} != null
+      GROUP BY ${accessor}
+      OFFSET 0 LIMIT @limit
+    `,
+    parameters: [{ name: '@limit', value: sampleSize }]
+  };
+
+  try {
+    const container = client.database(fromDatabase).container(fromContainer);
+    const { resources: results } = await container.items.query(querySpec).fetchAll();
+
+    if (results.length === 0) {
+      return {
+        cardinality: 'unknown',
+        confidence: 0,
+        error: 'No FK values found for cardinality analysis'
+      };
+    }
+
+    const refCounts = results.map(r => r.refCount);
+    const avgRefs = refCounts.reduce((a, b) => a + b, 0) / refCounts.length;
+    const maxRefs = Math.max(...refCounts);
+    const singleRefs = refCounts.filter(c => c === 1).length;
+    const singleRatio = singleRefs / refCounts.length;
+
+    let cardinality;
+    let confidence;
+
+    if (avgRefs < 1.2 && singleRatio > 0.9) {
+      cardinality = 'one-to-one';
+      confidence = 85;
+    } else if (avgRefs >= 1.5) {
+      cardinality = 'many-to-one';
+      confidence = 80;
+    } else {
+      cardinality = 'mixed';
+      confidence = 60;
+    }
+
+    return {
+      cardinality,
+      avgReferencesPerTarget: avgRefs.toFixed(2),
+      maxReferencesPerTarget: maxRefs,
+      singleReferenceRatio: (singleRatio * 100).toFixed(1) + '%',
+      sampleSize: results.length,
+      confidence
+    };
+  } catch (error) {
+    return {
+      cardinality: 'unknown',
+      confidence: 0,
+      error: `Cardinality analysis failed: ${error.message}`
+    };
+  }
+}
+
+/**
  * Helper to find a property in schema by path.
  * @param {object} schema - Container schema
  * @param {string} propertyPath - Property path (may be nested)
