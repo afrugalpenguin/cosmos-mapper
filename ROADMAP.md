@@ -112,6 +112,7 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - [x] Cardinality analysis (one-to-one vs many-to-one) ✅
 - [x] Denormalization/snapshot detection ✅
 - [x] Cross-database relationship detection ✅
+- [ ] Relationship overrides (confirm/ignore via config)
 - [ ] Circular dependency warnings
 - [ ] Missing inverse relationships
 
