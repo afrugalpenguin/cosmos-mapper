@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-158%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-186%20passing-brightgreen)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](tests/)
 [![Azure Cosmos DB](https://img.shields.io/badge/Azure-Cosmos%20DB-0078D4)](https://azure.microsoft.com/services/cosmos-db/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/)
@@ -20,6 +20,7 @@ Automatically samples documents from your Cosmos DB containers, infers schemas, 
 - **Schema Inference**: Samples documents and infers property types, optionality, and patterns
 - **Type Detection**: Recognises GUIDs, dates, reference objects, lookup objects, and more
 - **Relationship Detection**: Identifies foreign key-like relationships between containers
+- **Confidence Scoring**: Calculates confidence scores for detected relationships with optional data validation
 - **Cross-Database Support**: Detects relationships between containers across different databases
 - **Mermaid ERD Diagrams**: Generates visual entity relationship diagrams (compatible with these tools: https://mermaid.js.org/ecosystem/integrations-community.html).
 
@@ -74,7 +75,11 @@ For more advanced configuration, create a `cosmosmapper.config.json` file:
     "include": [],
     "exclude": ["*-archive", "*-backup", "test-*"]
   },
-  "formats": ["markdown", "html"]
+  "formats": ["markdown", "html"],
+  "validation": {
+    "enabled": false,
+    "sampleSize": 1000
+  }
 }
 ```
 
@@ -86,6 +91,8 @@ For more advanced configuration, create a `cosmosmapper.config.json` file:
 | `containers.include` | Glob patterns for containers to include | `[]` (all) |
 | `containers.exclude` | Glob patterns for containers to exclude | `[]` |
 | `formats` | Output formats: `markdown`, `html` | `["markdown", "html"]` |
+| `validation.enabled` | Query data to validate relationships | `false` |
+| `validation.sampleSize` | FK values to sample for validation | `1000` |
 
 See `cosmosmapper.config.example.json` for a template.
 
@@ -104,6 +111,8 @@ npm start -- --output ./docs --sample-size 50 --databases "db1,db2" --format mar
 | `--sample-size <n>` | Documents to sample per container |
 | `--databases <list>` | Comma-separated database names |
 | `--format <list>` | Comma-separated output formats |
+| `--validate` | Enable relationship data validation |
+| `--no-validate` | Disable relationship data validation |
 
 ## Usage
 
@@ -163,6 +172,85 @@ Relationships are detected from:
 >
 > Always verify critical relationships against your application code or domain knowledge.
 
+## Relationship Confidence Scoring
+
+Each detected relationship includes a confidence score (0-100%) indicating how likely it represents a real data relationship. The score is calculated from multiple factors:
+
+### Confidence Factors
+
+| Factor | Weight | Description |
+|--------|--------|-------------|
+| **Referential Integrity** | 45% | What percentage of FK values exist in the target container |
+| **Type Consistency** | 20% | Whether FK and target ID types match |
+| **Naming Pattern** | 20% | How well the property name matches the target container |
+| **Frequency** | 15% | How often the FK field is populated |
+
+### Confidence Levels
+
+| Level | Score | Meaning |
+|-------|-------|---------|
+| **High** | 80-100% | Strong evidence of a real relationship |
+| **Medium** | 60-79% | Likely a relationship, worth verifying |
+| **Low** | 40-59% | Possible relationship, may be coincidental |
+| **Very Low** | 0-39% | Unlikely to be a real relationship |
+
+### Enabling Data Validation
+
+By default, confidence is calculated using heuristics only (naming patterns, type matching). For more accurate scores, enable data validation to query actual FK values:
+
+```bash
+# Via CLI flag
+npm start -- --validate
+
+# Via environment variable
+VALIDATE_RELATIONSHIPS=true npm start
+```
+
+Or in `cosmosmapper.config.json`:
+
+```json
+{
+  "validation": {
+    "enabled": true,
+    "sampleSize": 1000
+  }
+}
+```
+
+### Configuration Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `validation.enabled` | Enable data validation queries | `false` |
+| `validation.sampleSize` | FK values to sample for integrity check | `1000` |
+| `validation.weights` | Custom weights for confidence factors | See below |
+
+Custom weights example:
+
+```json
+{
+  "validation": {
+    "enabled": true,
+    "weights": {
+      "referentialIntegrity": 0.50,
+      "typeConsistency": 0.20,
+      "frequency": 0.10,
+      "namingPattern": 0.20
+    }
+  }
+}
+```
+
+### Interpreting Results
+
+In the HTML report, relationships display colour-coded confidence badges:
+- 🟢 **Green** (High): Validated relationship with strong evidence
+- 🟡 **Yellow** (Medium): Likely relationship, consider verifying
+- 🔴 **Red** (Low): Weak evidence, may be false positive
+- ⚪ **Grey** (Very Low): Probably not a real relationship
+
+Hover over any relationship badge to see a detailed summary of the confidence factors.
+
 ## Testing
 
 Run the test suite:
@@ -173,7 +261,7 @@ npm run test:run  # Single run
 npm run test:coverage  # With coverage report
 ```
 
-158 unit tests covering configuration, type detection, schema inference, relationship detection, and output generation.
+186 unit tests covering configuration, type detection, schema inference, relationship detection, confidence scoring, and output generation.
 
 ## Demo with Cosmos DB Emulator
 
