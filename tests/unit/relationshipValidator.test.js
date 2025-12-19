@@ -3,7 +3,8 @@ import {
   validateReferentialIntegrity,
   validateTypeConsistency,
   validateFrequency,
-  detectDenormalization
+  detectDenormalization,
+  analyseCardinality
 } from '../../src/analysis/relationshipValidator.js';
 
 describe('relationshipValidator', () => {
@@ -263,6 +264,145 @@ describe('relationshipValidator', () => {
 
       expect(result.isDenormalized).toBe(false);
       expect(result.reason).toContain('Schema not available');
+    });
+  });
+
+  describe('analyseCardinality', () => {
+    it('should return unknown for orphan relationships', async () => {
+      const relationship = {
+        fromDatabase: 'db',
+        fromContainer: 'orders',
+        fromProperty: 'UnknownId',
+        isOrphan: true
+      };
+
+      const result = await analyseCardinality(null, relationship);
+
+      expect(result.cardinality).toBe('unknown');
+      expect(result.confidence).toBe(0);
+      expect(result.error).toContain('orphan');
+    });
+
+    it('should detect one-to-one cardinality', async () => {
+      // Mock client that returns single references
+      const mockClient = {
+        database: () => ({
+          container: () => ({
+            items: {
+              query: () => ({
+                fetchAll: () => Promise.resolve({
+                  resources: [
+                    { fkValue: 'id1', refCount: 1 },
+                    { fkValue: 'id2', refCount: 1 },
+                    { fkValue: 'id3', refCount: 1 },
+                    { fkValue: 'id4', refCount: 1 },
+                    { fkValue: 'id5', refCount: 1 }
+                  ]
+                })
+              })
+            }
+          })
+        })
+      };
+
+      const relationship = {
+        fromDatabase: 'db',
+        fromContainer: 'users',
+        fromProperty: 'ProfileId',
+        isOrphan: false
+      };
+
+      const result = await analyseCardinality(mockClient, relationship);
+
+      expect(result.cardinality).toBe('one-to-one');
+      expect(result.confidence).toBeGreaterThanOrEqual(80);
+    });
+
+    it('should detect many-to-one cardinality', async () => {
+      // Mock client that returns multiple references per target
+      const mockClient = {
+        database: () => ({
+          container: () => ({
+            items: {
+              query: () => ({
+                fetchAll: () => Promise.resolve({
+                  resources: [
+                    { fkValue: 'store1', refCount: 15 },
+                    { fkValue: 'store2', refCount: 8 },
+                    { fkValue: 'store3', refCount: 22 }
+                  ]
+                })
+              })
+            }
+          })
+        })
+      };
+
+      const relationship = {
+        fromDatabase: 'db',
+        fromContainer: 'orders',
+        fromProperty: 'StoreId',
+        isOrphan: false
+      };
+
+      const result = await analyseCardinality(mockClient, relationship);
+
+      expect(result.cardinality).toBe('many-to-one');
+      expect(result.avgReferencesPerTarget).toBeDefined();
+      expect(result.maxReferencesPerTarget).toBe(22);
+    });
+
+    it('should handle query errors gracefully', async () => {
+      const mockClient = {
+        database: () => ({
+          container: () => ({
+            items: {
+              query: () => ({
+                fetchAll: () => Promise.reject(new Error('Query failed'))
+              })
+            }
+          })
+        })
+      };
+
+      const relationship = {
+        fromDatabase: 'db',
+        fromContainer: 'orders',
+        fromProperty: 'StoreId',
+        isOrphan: false
+      };
+
+      const result = await analyseCardinality(mockClient, relationship);
+
+      expect(result.cardinality).toBe('unknown');
+      expect(result.confidence).toBe(0);
+      expect(result.error).toContain('failed');
+    });
+
+    it('should handle empty results', async () => {
+      const mockClient = {
+        database: () => ({
+          container: () => ({
+            items: {
+              query: () => ({
+                fetchAll: () => Promise.resolve({ resources: [] })
+              })
+            }
+          })
+        })
+      };
+
+      const relationship = {
+        fromDatabase: 'db',
+        fromContainer: 'orders',
+        fromProperty: 'StoreId',
+        isOrphan: false
+      };
+
+      const result = await analyseCardinality(mockClient, relationship);
+
+      expect(result.cardinality).toBe('unknown');
+      expect(result.error).toContain('No FK values');
     });
   });
 });
