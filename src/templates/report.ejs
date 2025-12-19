@@ -491,6 +491,8 @@
                 <% const isRelCrossDb = rel.toDatabase !== dbName; %>
                 <% const confLevel = rel.confidence?.level || 'medium'; %>
                 <% const confScore = rel.confidence?.score || 50; %>
+                <% const cardType = rel.confidence?.factors?.cardinality?.type; %>
+                <% const cardLabel = cardType === 'one-to-one' ? '1:1' : cardType === 'many-to-one' ? 'N:1' : ''; %>
                 <div class="relationship-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm <%= isRelCrossDb ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-purple-50 text-purple-700 border-purple-200' %> border"
                      data-from-property="<%= rel.fromProperty.toLowerCase() %>"
                      data-to-container="<%= rel.toContainer.toLowerCase() %>"
@@ -502,6 +504,9 @@
                   <span><%= rel.toContainer %></span>
                   <% if (isRelCrossDb) { %>
                   <span class="ml-1 text-xs text-orange-500">(<%= rel.toDatabase %>)</span>
+                  <% } %>
+                  <% if (cardLabel) { %>
+                  <span class="ml-1 px-1 py-0.5 text-xs font-medium bg-gray-200 text-gray-700 rounded"><%= cardLabel %></span>
                   <% } %>
                   <span class="confidence-badge confidence-<%= confLevel %>"><%= confScore %>%</span>
                 </div>
@@ -542,6 +547,8 @@
             <% for (const rel of crossDbRels) { %>
             <% const confLevel = rel.confidence?.level || 'medium'; %>
             <% const confScore = rel.confidence?.score || 50; %>
+            <% const cardType = rel.confidence?.factors?.cardinality?.type; %>
+            <% const cardDisplay = cardType === 'one-to-one' ? '1:1' : cardType === 'many-to-one' ? 'N:1' : rel.cardinality; %>
             <tr class="hover:bg-gray-50" title="<%= rel.confidence?.summary || '' %>">
               <td class="px-4 py-2 text-sm">
                 <span class="font-medium text-gray-900"><%= rel.fromDatabase %></span>.<%= rel.fromContainer %>
@@ -550,7 +557,7 @@
               <td class="px-4 py-2 text-sm">
                 <span class="font-medium text-gray-900"><%= rel.toDatabase %></span>.<%= rel.toContainer %>
               </td>
-              <td class="px-4 py-2 text-sm text-gray-500"><%= rel.cardinality %></td>
+              <td class="px-4 py-2 text-sm text-gray-500"><%= cardDisplay %></td>
               <td class="px-4 py-2 text-sm">
                 <span class="confidence-badge confidence-<%= confLevel %>"><%= confScore %>%</span>
               </td>
