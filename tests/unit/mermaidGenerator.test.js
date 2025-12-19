@@ -40,11 +40,11 @@ describe('mermaidGenerator', () => {
       const erd = generateERD(schemas, relationships);
 
       expect(erd).toContain('users {');
-      expect(erd).toContain('guid id PK');
+      expect(erd).toContain('guid id ID');
       expect(erd).toContain('string name');
     });
 
-    it('should mark PK for id property', () => {
+    it('should mark ID for id property', () => {
       const schemas = {
         items: {
           properties: {
@@ -55,10 +55,10 @@ describe('mermaidGenerator', () => {
 
       const erd = generateERD(schemas, [], { showKeys: true });
 
-      expect(erd).toContain('guid id PK');
+      expect(erd).toContain('guid id ID');
     });
 
-    it('should mark FK for relationship properties', () => {
+    it('should mark REF for relationship properties', () => {
       const schemas = {
         orders: {
           properties: {
@@ -78,7 +78,7 @@ describe('mermaidGenerator', () => {
 
       const erd = generateERD(schemas, relationships, { showKeys: true });
 
-      expect(erd).toContain('guid StoreId FK');
+      expect(erd).toContain('guid StoreId REF');
     });
 
     it('should mark optional properties with comment', () => {
@@ -125,8 +125,8 @@ describe('mermaidGenerator', () => {
 
       const erd = generateERD(schemas, [], { maxPropertiesPerEntity: 5 });
 
-      expect(erd).toContain('string more');
-      expect(erd).toContain('15 more properties');
+      expect(erd).toContain('string _more_');
+      expect(erd).toContain('15 more...');
     });
 
     it('should generate relationship lines', () => {
@@ -385,7 +385,7 @@ describe('mermaidGenerator', () => {
       expect(erd).toContain(': "Product"');
     });
 
-    it('should use only final property name in label for nested paths', () => {
+    it('should convert dots to underscores in label for nested paths', () => {
       const schemas = {
         orders: { properties: {} },
         products: { properties: {} }
@@ -400,8 +400,9 @@ describe('mermaidGenerator', () => {
 
       const erd = generateERD(schemas, relationships);
 
-      // Should use just the final property name (ProductId -> Product)
-      expect(erd).toContain(': "Product"');
+      // Dots are converted to underscores, then Id is removed
+      // Details.ProductId -> Details_ProductId -> Details_Product
+      expect(erd).toContain(': "Details_Product"');
     });
   });
 });

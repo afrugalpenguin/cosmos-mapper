@@ -34,6 +34,14 @@ vi.mock('../../src/analysis/relationshipValidator.js', () => ({
     confidence: 80,
     reason: 'No embedded object found',
     nestedFields: []
+  }),
+  analyseCardinality: vi.fn().mockResolvedValue({
+    cardinality: 'many-to-one',
+    avgReferencesPerTarget: 5.2,
+    maxReferencesPerTarget: 15,
+    singleReferenceRatio: 0.1,
+    confidence: 85,
+    error: null
   })
 }));
 
