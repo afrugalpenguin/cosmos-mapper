@@ -9,6 +9,9 @@ HANDOVER.md
 # Generated output (contains real customer data examples)
 /output/
 
+# Schema snapshots (may contain schema data)
+.cosmoscache/
+
 # OS files
 .DS_Store
 Thumbs.db

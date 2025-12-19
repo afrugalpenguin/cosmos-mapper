@@ -21,6 +21,10 @@ import { generateDocumentation } from './output/markdownGenerator.js';
 import { generateHtmlDocumentation } from './output/htmlGenerator.js';
 import { logger } from './utils/logger.js';
 import { loadConfig, shouldIncludeContainer } from './config/index.js';
+import { saveSnapshot, loadSnapshot, getLatestSnapshot, pruneSnapshots } from './versioning/snapshotManager.js';
+import { compareSnapshots } from './versioning/schemaComparer.js';
+import { classifyChanges } from './versioning/changeClassifier.js';
+import { formatDiffForConsole, generateDiffMarkdown } from './output/diffReportGenerator.js';
 
 /**
  * Main entry point.
@@ -187,8 +191,70 @@ async function main() {
       databases: databasesToAnalyse,
       containerSchemas,
       relationships: allRelationships,
-      timestamp
+      timestamp,
+      sampleSize: config.sampleSize
     };
+
+    // Schema versioning: compare with previous snapshot if --diff flag
+    let comparison = null;
+    if (config.diff || config.diffFrom) {
+      logger.section('Comparing with previous snapshot...');
+
+      try {
+        const previousSnapshot = config.diffFrom
+          ? await loadSnapshot(config.diffFrom, config.versioning.cacheDir)
+          : await getLatestSnapshot(config.versioning.cacheDir);
+
+        if (previousSnapshot) {
+          const rawComparison = compareSnapshots(previousSnapshot, analysisData);
+          comparison = classifyChanges(rawComparison);
+          analysisData.comparison = comparison;
+
+          // Output comparison summary
+          console.log(formatDiffForConsole(comparison));
+
+          if (comparison.summary.totalChanges > 0) {
+            logger.stat('Total changes', comparison.summary.totalChanges);
+            logger.stat('Breaking changes', comparison.summary.breakingChanges);
+
+            // Generate markdown diff report
+            await generateDiffMarkdown(comparison, {
+              baselineId: previousSnapshot.metadata?.id || 'unknown',
+              currentTimestamp: timestamp
+            }, config.output);
+            logger.item('Change report generated: schema-changes.md');
+          }
+        } else {
+          logger.warn('No previous snapshot found for comparison.');
+          logger.item('Run with --snapshot to create a baseline snapshot first.');
+        }
+      } catch (error) {
+        logger.warn(`Could not compare snapshots: ${error.message}`);
+      }
+    }
+
+    // Save snapshot if --snapshot flag provided
+    if (config.snapshot) {
+      logger.section('Saving snapshot...');
+
+      try {
+        const snapshotResult = await saveSnapshot(analysisData, {
+          name: config.snapshotName,
+          cacheDir: config.versioning.cacheDir
+        });
+
+        const name = snapshotResult.name || snapshotResult.id;
+        logger.item(`Snapshot saved: ${name}`);
+
+        // Prune old snapshots based on retention policy
+        const deleted = await pruneSnapshots(config.versioning.retention, config.versioning.cacheDir);
+        if (deleted > 0) {
+          logger.item(`Pruned ${deleted} old snapshot(s)`);
+        }
+      } catch (error) {
+        logger.warn(`Could not save snapshot: ${error.message}`);
+      }
+    }
 
     // Generate outputs based on configured formats
     if (config.formats.includes('markdown')) {
@@ -202,6 +268,12 @@ async function main() {
     }
 
     logger.done(config.output);
+
+    // Exit with error if breaking changes detected and --fail-on-breaking
+    if (config.versioning.failOnBreaking && comparison?.summary?.breakingChanges > 0) {
+      logger.error(`Exiting with error: ${comparison.summary.breakingChanges} breaking change(s) detected.`);
+      process.exit(1);
+    }
 
   } catch (error) {
     logger.error(`Fatal error: ${error.message}`, error);

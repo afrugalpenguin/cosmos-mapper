@@ -16,5 +16,10 @@
       "frequency": 0.15,
       "namingPattern": 0.20
     }
+  },
+  "versioning": {
+    "cacheDir": ".cosmoscache",
+    "retention": 10,
+    "failOnBreaking": false
   }
 }

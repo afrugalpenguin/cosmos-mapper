@@ -29,6 +29,11 @@ const DEFAULT_CONFIG = {
       frequency: 0.15,
       namingPattern: 0.20
     }
+  },
+  versioning: {
+    cacheDir: '.cosmoscache',  // Where to store snapshots
+    retention: 10,              // Number of unnamed snapshots to keep
+    failOnBreaking: false       // Exit code 1 if breaking changes detected
   }
 };
 
@@ -76,6 +81,21 @@ function parseCliArgs(args = process.argv.slice(2)) {
       parsed.validation = { enabled: true };
     } else if (arg === '--no-validate') {
       parsed.validation = { enabled: false };
+    }
+    // Versioning options
+    else if (arg === '--snapshot') {
+      // Check if next arg is a name (not another flag)
+      if (args[i + 1] && !args[i + 1].startsWith('--')) {
+        parsed.snapshotName = args[++i];
+      }
+      parsed.snapshot = true;
+    } else if (arg === '--diff') {
+      parsed.diff = true;
+    } else if (arg === '--diff-from' && args[i + 1]) {
+      parsed.diffFrom = args[++i];
+      parsed.diff = true;  // Implies diff mode
+    } else if (arg === '--fail-on-breaking') {
+      parsed.versioning = { ...parsed.versioning, failOnBreaking: true };
     }
   }
 
@@ -226,6 +246,18 @@ export async function loadConfig(cliArgs = process.argv.slice(2)) {
       ...fileConfig?.validation?.weights
     }
   };
+
+  config.versioning = {
+    ...DEFAULT_CONFIG.versioning,
+    ...fileConfig?.versioning,
+    ...cli.versioning
+  };
+
+  // Copy versioning flags from CLI
+  if (cli.snapshot !== undefined) config.snapshot = cli.snapshot;
+  if (cli.snapshotName !== undefined) config.snapshotName = cli.snapshotName;
+  if (cli.diff !== undefined) config.diff = cli.diff;
+  if (cli.diffFrom !== undefined) config.diffFrom = cli.diffFrom;
 
   // Clean up internal properties
   delete config.configPath;
