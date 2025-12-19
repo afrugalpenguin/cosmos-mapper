@@ -32,8 +32,8 @@
     details summary { cursor: pointer; list-style: none; }
     details summary::-webkit-details-marker { display: none; }
     details summary::marker { display: none; }
-    details[open] summary .chevron { transform: rotate(90deg); }
-    .chevron { transition: transform 0.2s; }
+    details[open] > summary .chevron { transform: rotate(90deg); }
+    .chevron { transition: transform 0.2s; transform-origin: center; }
     .diagram-container {
       position: relative;
       overflow: hidden;
@@ -73,6 +73,12 @@
     .diagram-controls button:hover {
       background: #f3f4f6;
       border-color: #9ca3af;
+    }
+    /* Search highlighting for relationships */
+    .relationship-badge.search-match {
+      background: #fef08a !important;
+      border-color: #fbbf24 !important;
+      color: #92400e !important;
     }
     /* Sidebar styles */
     .sidebar {
@@ -144,22 +150,25 @@
           </div>
         </div>
         <!-- Search -->
-        <div class="relative flex-1 max-w-md">
-          <input
-            type="text"
-            id="searchInput"
-            placeholder="Search containers, properties..."
-            class="w-full px-4 py-2 pl-10 text-sm text-gray-900 bg-white/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50"
-            onkeyup="handleSearch(this.value)"
-          >
-          <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-          </svg>
-          <button onclick="clearSearch()" id="clearSearchBtn" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 hidden">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        <div class="flex-1 max-w-md">
+          <div class="relative">
+            <input
+              type="text"
+              id="searchInput"
+              placeholder="Search containers, properties, relationships..."
+              class="w-full px-4 py-2 pl-10 text-sm text-gray-900 bg-white/90 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50"
+              onkeyup="handleSearch(this.value)"
+            >
+            <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
-          </button>
+            <button onclick="clearSearch()" id="clearSearchBtn" class="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700 hidden">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <div id="searchResults" class="mt-1 text-xs text-white/80 hidden"></div>
         </div>
       </div>
     </div>
@@ -186,7 +195,6 @@
           </button>
         </div>
       </div>
-      <div id="searchResults" class="mt-2 text-xs text-gray-500 hidden"></div>
     </div>
     <nav class="p-2">
       <a href="#overview" class="nav-item flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg border-l-2 border-transparent">
@@ -316,14 +324,50 @@
       </summary>
 
       <div class="p-6">
-        <!-- Database ERD -->
-        <% if (databaseERDs[dbName]) { %>
+        <!-- Simple ERD (relationship overview) -->
+        <% if (databaseSimpleERDs[dbName]) { %>
+        <% const dbIntraRels = relationships.filter(r => r.fromDatabase === dbName && r.toDatabase === dbName && !r.isOrphan); %>
+        <% const dbCrossRels = relationships.filter(r => r.fromDatabase === dbName && r.toDatabase !== dbName && !r.isOrphan); %>
         <details class="mb-6" open>
           <summary class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
             <svg class="w-4 h-4 chevron text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
             </svg>
-            Database ERD
+            <%= dbName %> Relationships
+            <% if (dbIntraRels.length > 0) { %>
+            <span class="ml-2 px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
+              <%= dbIntraRels.length %> shown
+            </span>
+            <% } %>
+            <% if (dbCrossRels.length > 0) { %>
+            <span class="px-2 py-0.5 text-xs font-medium bg-orange-100 text-orange-700 rounded-full" title="Cross-database relationships - see container details">
+              + <%= dbCrossRels.length %> cross-db
+            </span>
+            <% } %>
+          </summary>
+          <div class="diagram-container" style="height: 450px; min-height: 300px; max-height: 550px;">
+            <div class="diagram-controls">
+              <button onclick="zoomIn(this)" title="Zoom In">+</button>
+              <button onclick="zoomOut(this)" title="Zoom Out">−</button>
+              <button onclick="resetZoom(this)" title="Reset">⟲</button>
+            </div>
+            <div class="diagram-viewport">
+              <pre class="mermaid">
+<%- databaseSimpleERDs[dbName] %>
+              </pre>
+            </div>
+          </div>
+        </details>
+        <% } %>
+
+        <!-- Detailed ERD (with entity properties) -->
+        <% if (databaseERDs[dbName]) { %>
+        <details class="mb-6">
+          <summary class="flex items-center gap-2 text-sm font-medium text-gray-700 mb-3">
+            <svg class="w-4 h-4 chevron text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+            <%= dbName %> Schema Details
           </summary>
           <div class="diagram-container" style="height: calc(100vh - 300px); min-height: 400px; max-height: 600px;">
             <div class="diagram-controls">
@@ -345,6 +389,7 @@
         <% const schema = containerSchemas[`${dbName}.${containerName}`] || containerSchemas[containerName]; %>
         <% if (schema) { %>
         <% const containerRels = relationships.filter(r => r.fromContainer === containerName && r.fromDatabase === dbName && !r.isOrphan); %>
+        <% const hasCrossDb = containerRels.some(r => r.toDatabase !== dbName); %>
         <details id="<%= dbName %>-<%= containerName %>" class="container-details border border-gray-200 rounded-lg mb-4" data-container="<%= containerName %>" data-database="<%= dbName %>">
           <summary class="flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors rounded-t-lg">
             <div class="flex items-center gap-2">
@@ -358,8 +403,8 @@
                 <%= getRootProperties(schema.properties).length %> properties
               </span>
               <% if (containerRels.length > 0) { %>
-              <span class="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">
-                <%= containerRels.length %> relationships
+              <span class="px-2 py-1 text-xs font-medium <%= hasCrossDb ? 'bg-orange-100 text-orange-700' : 'bg-purple-100 text-purple-700' %> rounded-full" <%= hasCrossDb ? 'title="Includes cross-database relationships"' : '' %>>
+                <%= containerRels.length %> rel<%= hasCrossDb ? ' ⚡' : '' %>
               </span>
               <% } %>
             </div>
@@ -383,8 +428,10 @@
                     <% if (prop.name === 'id') { %>
                     <span class="ml-1 px-1.5 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded">ID</span>
                     <% } %>
-                    <% if (containerRels.some(r => r.fromProperty === prop.name)) { %>
-                    <span class="ml-1 px-1.5 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 rounded">REF</span>
+                    <% const propRel = containerRels.find(r => r.fromProperty === prop.name); %>
+                    <% if (propRel) { %>
+                    <% const isRefCrossDb = propRel.toDatabase !== dbName; %>
+                    <span class="ml-1 px-1.5 py-0.5 text-xs font-medium <%= isRefCrossDb ? 'bg-orange-100 text-orange-800' : 'bg-purple-100 text-purple-800' %> rounded">REF</span>
                     <% } %>
                   </td>
                   <td class="px-4 py-2 text-sm text-gray-600 property-type">
@@ -411,14 +458,17 @@
               <h4 class="text-sm font-medium text-gray-700 mb-2">Outgoing Relationships</h4>
               <div class="flex flex-wrap gap-2">
                 <% for (const rel of containerRels) { %>
-                <div class="inline-flex items-center px-3 py-1.5 rounded-full text-sm bg-purple-50 text-purple-700 border border-purple-200">
+                <% const isRelCrossDb = rel.toDatabase !== dbName; %>
+                <div class="relationship-badge inline-flex items-center px-3 py-1.5 rounded-full text-sm <%= isRelCrossDb ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-purple-50 text-purple-700 border-purple-200' %> border"
+                     data-from-property="<%= rel.fromProperty.toLowerCase() %>"
+                     data-to-container="<%= rel.toContainer.toLowerCase() %>">
                   <span class="font-medium"><%= rel.fromProperty %></span>
                   <svg class="w-4 h-4 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
                   </svg>
                   <span><%= rel.toContainer %></span>
-                  <% if (rel.isCrossDatabase) { %>
-                  <span class="ml-1 text-xs text-purple-500">(<%= rel.toDatabase %>)</span>
+                  <% if (isRelCrossDb) { %>
+                  <span class="ml-1 text-xs text-orange-500">(<%= rel.toDatabase %>)</span>
                   <% } %>
                 </div>
                 <% } %>
@@ -590,6 +640,10 @@
         document.querySelectorAll('.search-highlight').forEach(el => {
           el.outerHTML = el.textContent;
         });
+        // Reset relationship badges
+        document.querySelectorAll('.relationship-badge').forEach(el => {
+          el.classList.remove('search-match');
+        });
         return;
       }
 
@@ -597,6 +651,7 @@
       const lowerQuery = query.toLowerCase();
       let matchCount = 0;
       let containerMatches = 0;
+      let relationshipMatches = 0;
 
       // Search containers and properties
       document.querySelectorAll('.container-details').forEach(container => {
@@ -616,6 +671,20 @@
           } else {
             row.classList.add('search-hidden');
             row.classList.remove('search-match');
+          }
+        });
+
+        // Search relationships within container
+        container.querySelectorAll('.relationship-badge').forEach(badge => {
+          const fromProp = badge.dataset.fromProperty || '';
+          const toContainer = badge.dataset.toContainer || '';
+
+          if (fromProp.includes(lowerQuery) || toContainer.includes(lowerQuery)) {
+            badge.classList.add('search-match');
+            hasMatch = true;
+            relationshipMatches++;
+          } else {
+            badge.classList.remove('search-match');
           }
         });
 
@@ -642,7 +711,7 @@
 
       // Show results count
       resultsDiv.classList.remove('hidden');
-      resultsDiv.textContent = `${containerMatches} container${containerMatches !== 1 ? 's' : ''}, ${matchCount} propert${matchCount !== 1 ? 'ies' : 'y'}`;
+      resultsDiv.textContent = `${containerMatches} container${containerMatches !== 1 ? 's' : ''}, ${matchCount} propert${matchCount !== 1 ? 'ies' : 'y'}, ${relationshipMatches} relationship${relationshipMatches !== 1 ? 's' : ''}`;
     }
 
     function clearSearch() {
