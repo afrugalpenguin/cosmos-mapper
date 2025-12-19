@@ -2,7 +2,7 @@
 
 A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB documentation and analysis tool.
 
-## Current Status (v1.3)
+## Current Status (v1.4)
 
 **Completed:**
 - Schema inference with type detection (GUIDs, dates, reference objects, etc.)
@@ -15,7 +15,8 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - Mermaid ERD diagram generation
 - Config file support with CLI overrides
 - Container include/exclude patterns
-- 196 unit tests with 95% coverage
+- **Schema versioning & change detection** (snapshots, diff, breaking change detection)
+- 269 unit tests with 95% coverage
 
 ---
 
@@ -24,11 +25,11 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 **Goal:** Make the generated documentation more useful and comprehensive.
 
 ### Schema Versioning & Change Detection
-- [ ] Store schema snapshots in a local cache/history
-- [ ] Compare current schema against previous runs
-- [ ] Generate change reports (new properties, removed properties, type changes)
-- [ ] Highlight breaking changes vs additive changes
-- [ ] Add `--diff` flag to show only what changed since last run
+- [x] Store schema snapshots in a local cache/history ✅
+- [x] Compare current schema against previous runs ✅
+- [x] Generate change reports (new properties, removed properties, type changes) ✅
+- [x] Highlight breaking changes vs additive changes ✅
+- [x] Add `--diff` flag to show only what changed since last run ✅
 
 ### Improved Type Detection
 - [ ] Detect email addresses, URLs, phone numbers
@@ -112,6 +113,7 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - [x] Cardinality analysis (one-to-one vs many-to-one) ✅
 - [x] Denormalization/snapshot detection ✅
 - [x] Cross-database relationship detection ✅
+- [ ] Relationship overrides (confirm/ignore via config)
 - [ ] Circular dependency warnings
 - [ ] Missing inverse relationships
 
@@ -194,7 +196,7 @@ These are smaller improvements that add value without major architectural change
 ## Prioritisation Suggestions
 
 ### High Impact, Lower Effort
-1. Schema change detection (Phase 1)
+1. ~~Schema change detection (Phase 1)~~ ✅ Done
 2. ~~Config file support (Phase 3)~~ ✅ Done
 3. ~~HTML output with search (Phase 2)~~ ✅ Done
 4. `--watch` mode (Quick Win)
@@ -220,7 +222,7 @@ These are smaller improvements that add value without major architectural change
 | 1.1 | Polish | Config file, CLI args, container filtering, test suite | ✅ Complete |
 | 1.2 | HTML & ERDs | HTML output with search, Mermaid ERD diagrams | ✅ Complete |
 | 1.3 | Confidence | Relationship confidence scoring, cardinality analysis, validation | ✅ Complete |
-| 1.4 | Change Detection | Schema versioning, diff reports | Planned |
+| 1.4 | Change Detection | Schema versioning, diff reports, breaking change detection | ✅ Complete |
 | 2.0 | CI/CD | Pipeline integration, exit codes, auto-commit | Planned |
 | 3.0 | Analysis | Data quality metrics, recommendations | Planned |
 | 4.0 | Interactive | Web UI, visual exploration | Planned |
