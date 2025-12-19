@@ -16,6 +16,7 @@ if (process.env.COSMOS_ENDPOINT?.includes('localhost')) {
 import { createCosmosClient, listDatabases, listContainers, sampleDocuments, getContainerInfo } from './cosmos/client.js';
 import { inferSchema } from './analysis/schemaInferrer.js';
 import { detectRelationships } from './analysis/relationships.js';
+import { calculateConfidenceBatch, getConfidenceStats } from './analysis/confidenceCalculator.js';
 import { generateDocumentation } from './output/markdownGenerator.js';
 import { generateHtmlDocumentation } from './output/htmlGenerator.js';
 import { logger } from './utils/logger.js';
@@ -141,12 +142,42 @@ async function main() {
       }
     }
 
+    // Validate relationships and calculate confidence scores
+    if (config.validation.enabled && allRelationships.length > 0) {
+      logger.section('Validating relationships...');
+      await calculateConfidenceBatch(
+        allRelationships,
+        containerSchemas,
+        client,
+        config.validation.weights
+      );
+      const stats = getConfidenceStats(allRelationships);
+      logger.item(`Validated ${stats.validated} relationships`);
+      logger.item(`Average confidence: ${stats.averageScore}%`);
+    } else if (allRelationships.length > 0) {
+      // Calculate confidence without data validation (heuristics only)
+      await calculateConfidenceBatch(
+        allRelationships,
+        containerSchemas,
+        null,
+        config.validation.weights
+      );
+    }
+
     // Summary statistics
     logger.section('Analysis Summary');
     logger.stat('Containers analysed', Object.keys(containerSchemas).length);
     logger.stat('Relationships detected', allRelationships.filter(r => !r.isOrphan).length);
     logger.stat('Orphan references', allRelationships.filter(r => r.isOrphan).length);
     logger.stat('Cross-database relationships', allRelationships.filter(r => r.isCrossDatabase).length);
+
+    // Show confidence breakdown if available
+    const confStats = getConfidenceStats(allRelationships);
+    if (confStats.total > 0) {
+      logger.stat('High confidence', confStats.byLevel.high);
+      logger.stat('Medium confidence', confStats.byLevel.medium);
+      logger.stat('Low confidence', confStats.byLevel.low + confStats.byLevel['very-low']);
+    }
 
     // Generate documentation
     logger.section('Generating documentation...');
