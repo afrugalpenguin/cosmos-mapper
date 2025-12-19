@@ -19,7 +19,17 @@ const DEFAULT_CONFIG = {
     include: [],      // Empty = all containers
     exclude: []       // Patterns to exclude (e.g., '*-archive')
   },
-  formats: ['markdown', 'html']
+  formats: ['markdown', 'html'],
+  validation: {
+    enabled: false,   // Set true to query data for confidence scoring
+    sampleSize: 1000, // FK values to sample for integrity check
+    weights: {
+      referentialIntegrity: 0.45,
+      typeConsistency: 0.20,
+      frequency: 0.15,
+      namingPattern: 0.20
+    }
+  }
 };
 
 /**
@@ -62,6 +72,10 @@ function parseCliArgs(args = process.argv.slice(2)) {
       parsed.databases = args[++i].split(',').map(s => s.trim()).filter(Boolean);
     } else if (arg === '--format' && args[i + 1]) {
       parsed.formats = args[++i].split(',').map(s => s.trim()).filter(Boolean);
+    } else if (arg === '--validate') {
+      parsed.validation = { enabled: true };
+    } else if (arg === '--no-validate') {
+      parsed.validation = { enabled: false };
     }
   }
 
@@ -92,6 +106,11 @@ function parseEnvVars() {
 
   if (process.env.OUTPUT_DIR) {
     env.output = process.env.OUTPUT_DIR;
+  }
+
+  if (process.env.VALIDATE_RELATIONSHIPS) {
+    const val = process.env.VALIDATE_RELATIONSHIPS.toLowerCase();
+    env.validation = { enabled: val === 'true' || val === '1' };
   }
 
   return env;
@@ -195,6 +214,17 @@ export async function loadConfig(cliArgs = process.argv.slice(2)) {
     ...DEFAULT_CONFIG.containers,
     ...fileConfig?.containers,
     ...cli.containers
+  };
+
+  config.validation = {
+    ...DEFAULT_CONFIG.validation,
+    ...fileConfig?.validation,
+    ...envConfig?.validation,
+    ...cli.validation,
+    weights: {
+      ...DEFAULT_CONFIG.validation.weights,
+      ...fileConfig?.validation?.weights
+    }
   };
 
   // Clean up internal properties

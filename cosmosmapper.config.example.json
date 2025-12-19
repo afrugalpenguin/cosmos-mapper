@@ -6,5 +6,15 @@
     "include": [],
     "exclude": ["*-archive", "*-backup", "test-*"]
   },
-  "formats": ["markdown", "html"]
+  "formats": ["markdown", "html"],
+  "validation": {
+    "enabled": false,
+    "sampleSize": 1000,
+    "weights": {
+      "referentialIntegrity": 0.45,
+      "typeConsistency": 0.20,
+      "frequency": 0.15,
+      "namingPattern": 0.20
+    }
+  }
 }
