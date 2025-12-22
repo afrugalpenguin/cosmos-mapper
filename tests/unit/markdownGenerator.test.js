@@ -119,7 +119,7 @@ describe('markdownGenerator', () => {
       const usersPath = Object.keys(writtenFiles).find(p => p.includes('users.md'));
       const content = writtenFiles[usersPath];
 
-      expect(content).toContain('| Property | Type | Required | Example |');
+      expect(content).toContain('| Property | Type | Status | Example | Notes |');
       expect(content).toContain('| id |');
       expect(content).toContain('| name |');
     });

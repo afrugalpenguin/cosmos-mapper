@@ -112,6 +112,85 @@ describe('typeDetector', () => {
       });
     });
 
+    describe('email detection', () => {
+      it('should detect valid email addresses', () => {
+        expect(detectType('user@example.com')).toBe('email');
+        expect(detectType('test.user@domain.co.uk')).toBe('email');
+        expect(detectType('name+tag@company.org')).toBe('email');
+      });
+
+      it('should NOT detect invalid emails', () => {
+        expect(detectType('not-an-email')).toBe('string');
+        expect(detectType('@missing-local.com')).toBe('string');
+        expect(detectType('missing-domain@')).toBe('string');
+      });
+    });
+
+    describe('URL detection', () => {
+      it('should detect valid URLs', () => {
+        expect(detectType('https://example.com')).toBe('url');
+        expect(detectType('http://localhost:3000/path')).toBe('url');
+        expect(detectType('https://api.example.com/v1/users?id=123')).toBe('url');
+      });
+
+      it('should NOT detect non-http URLs or invalid URLs', () => {
+        expect(detectType('ftp://files.example.com')).toBe('string');
+        expect(detectType('example.com')).toBe('string');
+        expect(detectType('www.example.com')).toBe('string');
+      });
+    });
+
+    describe('phone detection', () => {
+      it('should detect international phone numbers', () => {
+        expect(detectType('+1234567890')).toBe('phone');
+        expect(detectType('+44 20 7946 0958')).toBe('phone');
+        expect(detectType('+1-555-123-4567')).toBe('phone');
+      });
+
+      it('should detect US format phone numbers', () => {
+        expect(detectType('(123) 456-7890')).toBe('phone');
+        expect(detectType('123-456-7890')).toBe('phone');
+        expect(detectType('123.456.7890')).toBe('phone');
+      });
+
+      it('should NOT detect date-like strings as phone', () => {
+        expect(detectType('15-01-2024')).toBe('string');
+        expect(detectType('2024-01-15')).toBe('datetime');
+        expect(detectType('12/25/2024')).toBe('string');
+      });
+
+      it('should NOT detect random digit strings as phone', () => {
+        expect(detectType('1234567890123456')).toBe('string');  // Too long with no format
+        expect(detectType('12345')).toBe('string');  // Too short
+      });
+    });
+
+    describe('custom pattern detection', () => {
+      it('should detect custom patterns when provided', () => {
+        const customPatterns = [
+          { name: 'sku', pattern: '^SKU-\\d{6}$', displayName: 'SKU' }
+        ];
+        expect(detectType('SKU-123456', customPatterns)).toBe('sku');
+        expect(detectType('SKU-000001', customPatterns)).toBe('sku');
+      });
+
+      it('should fall back to string for non-matching custom patterns', () => {
+        const customPatterns = [
+          { name: 'sku', pattern: '^SKU-\\d{6}$', displayName: 'SKU' }
+        ];
+        expect(detectType('PROD-123456', customPatterns)).toBe('string');
+        expect(detectType('SKU-12345', customPatterns)).toBe('string'); // Too short
+      });
+
+      it('should check built-in patterns before custom patterns', () => {
+        const customPatterns = [
+          { name: 'custom-guid', pattern: '^[0-9a-f-]+$', displayName: 'Custom' }
+        ];
+        // GUIDs should still be detected as guid, not custom-guid
+        expect(detectType('12345678-1234-1234-1234-123456789abc', customPatterns)).toBe('guid');
+      });
+    });
+
     describe('object pattern detection', () => {
       it('should detect DateTimeObject pattern', () => {
         expect(detectType(objectPatterns.dateTimeObject)).toBe('DateTimeObject');
@@ -186,6 +265,9 @@ describe('typeDetector', () => {
       expect(getTypeDisplayName('SimpleReference')).toBe('Reference');
       expect(getTypeDisplayName('guid')).toBe('GUID');
       expect(getTypeDisplayName('datetime')).toBe('DateTime');
+      expect(getTypeDisplayName('email')).toBe('Email');
+      expect(getTypeDisplayName('url')).toBe('URL');
+      expect(getTypeDisplayName('phone')).toBe('Phone');
       expect(getTypeDisplayName('integer')).toBe('Integer');
       expect(getTypeDisplayName('number')).toBe('Number');
       expect(getTypeDisplayName('boolean')).toBe('Boolean');
@@ -198,6 +280,13 @@ describe('typeDetector', () => {
     it('should return type itself for unknown types', () => {
       expect(getTypeDisplayName('unknown-type')).toBe('unknown-type');
       expect(getTypeDisplayName('custom')).toBe('custom');
+    });
+
+    it('should use custom pattern display names when provided', () => {
+      const customPatterns = [
+        { name: 'sku', pattern: '^SKU-\\d{6}$', displayName: 'SKU Code' }
+      ];
+      expect(getTypeDisplayName('sku', customPatterns)).toBe('SKU Code');
     });
   });
 

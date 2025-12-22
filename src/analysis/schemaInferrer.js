@@ -6,12 +6,15 @@ const COSMOS_METADATA_FIELDS = ['_rid', '_self', '_etag', '_ts', '_attachments']
 /**
  * Infers schema from an array of sampled documents.
  * @param {object[]} documents - Array of documents to analyse
+ * @param {object} config - Optional configuration (typeDetection settings)
  * @returns {object} Inferred schema with property details
  */
-export function inferSchema(documents) {
+export function inferSchema(documents, config = {}) {
   if (!documents || documents.length === 0) {
     return { properties: {}, documentCount: 0 };
   }
+
+  const customPatterns = config.typeDetection?.customPatterns || [];
 
   const schema = {
     properties: {},
@@ -20,11 +23,17 @@ export function inferSchema(documents) {
 
   // Process each document
   for (const doc of documents) {
-    walkObject(doc, '', schema.properties, documents.length);
+    walkObject(doc, '', schema.properties, documents.length, customPatterns);
   }
 
   // Calculate required/optional based on occurrence frequency
   calculateOptionality(schema.properties, documents.length);
+
+  // Detect enum-like fields if enabled
+  const enumConfig = config.typeDetection?.enumDetection;
+  if (enumConfig?.enabled !== false) {
+    detectEnumFields(schema.properties, documents.length, enumConfig);
+  }
 
   return schema;
 }
@@ -32,7 +41,7 @@ export function inferSchema(documents) {
 /**
  * Recursively walks an object and records property information.
  */
-function walkObject(obj, basePath, properties, totalDocs) {
+function walkObject(obj, basePath, properties, totalDocs, customPatterns = []) {
   if (obj === null || obj === undefined) {
     return;
   }
@@ -54,6 +63,8 @@ function walkObject(obj, basePath, properties, totalDocs) {
         types: new Set(),
         occurrences: 0,
         examples: new Set(),
+        nullCount: 0,
+        allValues: new Set(),  // Track all unique values for enum detection
         children: {},
         isArray: false,
         arrayItemTypes: new Set()
@@ -63,9 +74,19 @@ function walkObject(obj, basePath, properties, totalDocs) {
     const prop = properties[path];
     prop.occurrences++;
 
+    // Track null values separately
+    if (value === null) {
+      prop.nullCount++;
+    }
+
     // Detect and record type
-    const type = detectType(value);
+    const type = detectType(value, customPatterns);
     prop.types.add(type);
+
+    // Track all unique values for enum detection (limit to prevent memory issues)
+    if (type === 'string' && value !== null && prop.allValues.size < 50) {
+      prop.allValues.add(value);
+    }
 
     // Record example value (limit to 5 unique examples)
     if (prop.examples.size < 5 && value !== null && value !== undefined) {
@@ -78,11 +99,11 @@ function walkObject(obj, basePath, properties, totalDocs) {
     // Handle arrays
     if (Array.isArray(value)) {
       prop.isArray = true;
-      processArray(value, path, properties, prop, totalDocs);
+      processArray(value, path, properties, prop, totalDocs, customPatterns);
     }
     // Handle nested objects (but not special patterns)
     else if (type === 'object' && typeof value === 'object') {
-      walkObject(value, path, properties, totalDocs);
+      walkObject(value, path, properties, totalDocs, customPatterns);
     }
   }
 }
@@ -90,7 +111,7 @@ function walkObject(obj, basePath, properties, totalDocs) {
 /**
  * Processes array items and records their types/schema.
  */
-function processArray(arr, basePath, properties, parentProp, totalDocs) {
+function processArray(arr, basePath, properties, parentProp, totalDocs, customPatterns = []) {
   const itemPath = `${basePath}[]`;
 
   // Initialize array item record
@@ -102,6 +123,8 @@ function processArray(arr, basePath, properties, parentProp, totalDocs) {
       types: new Set(),
       occurrences: 0,
       examples: new Set(),
+      nullCount: 0,
+      allValues: new Set(),
       children: {},
       isArrayItem: true
     };
@@ -111,9 +134,19 @@ function processArray(arr, basePath, properties, parentProp, totalDocs) {
 
   for (const item of arr) {
     itemProp.occurrences++;
-    const itemType = detectType(item);
+    const itemType = detectType(item, customPatterns);
     itemProp.types.add(itemType);
     parentProp.arrayItemTypes.add(itemType);
+
+    // Track null values
+    if (item === null) {
+      itemProp.nullCount++;
+    }
+
+    // Track all unique values for enum detection
+    if (itemType === 'string' && item !== null && itemProp.allValues.size < 50) {
+      itemProp.allValues.add(item);
+    }
 
     // Record example
     if (itemProp.examples.size < 3) {
@@ -125,7 +158,7 @@ function processArray(arr, basePath, properties, parentProp, totalDocs) {
 
     // If array items are objects, walk them too
     if (itemType === 'object' && typeof item === 'object' && item !== null) {
-      walkObject(item, itemPath, properties, totalDocs);
+      walkObject(item, itemPath, properties, totalDocs, customPatterns);
     }
   }
 }
@@ -176,6 +209,7 @@ function formatExample(value, type) {
 
 /**
  * Calculates whether each property is required or optional.
+ * Also determines nullable status.
  * Required = appears in >= 95% of documents
  */
 function calculateOptionality(properties, totalDocs, threshold = 0.95) {
@@ -186,11 +220,133 @@ function calculateOptionality(properties, totalDocs, threshold = 0.95) {
     if (prop.arrayItemTypes) {
       prop.arrayItemTypes = Array.from(prop.arrayItemTypes);
     }
+    if (prop.allValues) {
+      prop.allValues = Array.from(prop.allValues);
+    }
 
-    // Calculate if required
+    // Calculate frequency
     prop.frequency = prop.occurrences / totalDocs;
     prop.isRequired = prop.frequency >= threshold;
+
+    // Calculate nullable status
+    prop.isNullable = prop.nullCount > 0;
+    prop.nullFrequency = totalDocs > 0 ? prop.nullCount / totalDocs : 0;
+
+    // Determine optionality classification
+    if (prop.frequency >= threshold) {
+      if (prop.nullCount > 0) {
+        prop.optionality = 'nullable';  // Always present, sometimes null
+      } else {
+        prop.optionality = 'required';  // Always present, never null
+      }
+    } else if (prop.frequency >= 0.05) {
+      prop.optionality = 'optional';    // Sometimes missing
+    } else {
+      prop.optionality = 'sparse';      // Rarely present
+    }
   }
+}
+
+/**
+ * Detects enum-like fields based on limited unique values.
+ */
+function detectEnumFields(properties, totalDocs, config = {}) {
+  const maxValues = config.maxUniqueValues || 10;
+  const minFrequency = config.minFrequency || 0.8;
+
+  for (const prop of Object.values(properties)) {
+    // Only consider string properties with limited unique values
+    if (!prop.types.includes('string')) continue;
+    if (!prop.allValues || prop.allValues.length === 0) continue;
+    if (prop.allValues.length > maxValues) continue;
+    if (prop.frequency < minFrequency) continue;
+
+    // This looks like an enum
+    prop.isEnum = true;
+    prop.enumValues = [...prop.allValues].sort();
+  }
+
+  // Also detect computed/derived fields
+  detectComputedFields(properties);
+}
+
+/**
+ * Detects computed/derived fields based on pattern consistency.
+ * Fields where all values match a specific pattern are likely computed.
+ */
+function detectComputedFields(properties) {
+  // Common computed field patterns
+  const computedPatterns = [
+    { name: 'uuid-v4', regex: /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i },
+    { name: 'prefixed-id', regex: /^[A-Z]{2,5}-\d{4,}$/ },  // e.g., INV-12345, ORD-00001
+    { name: 'timestamp-id', regex: /^\d{13,}$/ },            // Unix timestamp ms
+    { name: 'slug', regex: /^[a-z0-9]+(-[a-z0-9]+)+$/ },    // URL slugs
+    { name: 'hash', regex: /^[a-f0-9]{32,64}$/i }           // MD5, SHA hashes
+  ];
+
+  for (const prop of Object.values(properties)) {
+    // Only consider string properties with multiple unique values
+    if (!prop.types.includes('string')) continue;
+    if (!prop.allValues || prop.allValues.length < 3) continue;
+    if (prop.isEnum) continue;  // Skip enums
+
+    // Check if all values match a computed pattern
+    for (const pattern of computedPatterns) {
+      const allMatch = prop.allValues.every(v => pattern.regex.test(v));
+      if (allMatch) {
+        prop.isComputed = true;
+        prop.computedPattern = pattern.name;
+        break;
+      }
+    }
+
+    // If no predefined pattern matched, check for consistent structure
+    if (!prop.isComputed && prop.allValues.length >= 5) {
+      const consistentPattern = detectConsistentPattern(prop.allValues);
+      if (consistentPattern) {
+        prop.isComputed = true;
+        prop.computedPattern = consistentPattern;
+      }
+    }
+  }
+}
+
+/**
+ * Detects if all values share a consistent structural pattern.
+ * Returns pattern description or null.
+ */
+function detectConsistentPattern(values) {
+  if (values.length < 5) return null;
+
+  // Check if all values have same length
+  const lengths = new Set(values.map(v => v.length));
+  if (lengths.size === 1) {
+    const len = values[0].length;
+    // Check if structure is consistent (same positions for digits/letters/separators)
+    const structure = values[0].split('').map(c => {
+      if (/\d/.test(c)) return 'D';
+      if (/[A-Z]/.test(c)) return 'U';
+      if (/[a-z]/.test(c)) return 'L';
+      return c;  // Keep separators as-is
+    }).join('');
+
+    const allSameStructure = values.every(v => {
+      const vStructure = v.split('').map(c => {
+        if (/\d/.test(c)) return 'D';
+        if (/[A-Z]/.test(c)) return 'U';
+        if (/[a-z]/.test(c)) return 'L';
+        return c;
+      }).join('');
+      return vStructure === structure;
+    });
+
+    if (allSameStructure && structure.includes('D')) {
+      // Has consistent structure with numbers - likely computed
+      return `fixed-format-${len}`;
+    }
+  }
+
+  return null;
 }
 
 /**

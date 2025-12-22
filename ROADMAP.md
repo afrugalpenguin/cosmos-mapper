@@ -2,10 +2,10 @@
 
 A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB documentation and analysis tool.
 
-## Current Status (v1.4)
+## Current Status (v1.5)
 
 **Completed:**
-- Schema inference with type detection (GUIDs, dates, reference objects, etc.)
+- Schema inference with type detection (GUIDs, dates, emails, URLs, phones, enums, reference objects, etc.)
 - Relationship detection from naming conventions
 - **Relationship confidence scoring** with multi-factor analysis
 - **Cardinality analysis** (one-to-one vs many-to-one)
@@ -16,7 +16,8 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - Config file support with CLI overrides
 - Container include/exclude patterns
 - **Schema versioning & change detection** (snapshots, diff, breaking change detection)
-- 269 unit tests with 95% coverage
+- **Improved type detection** (email, URL, phone, enum, nullable, computed fields, custom patterns)
+- 289 unit tests with 95% coverage
 
 ---
 
@@ -32,11 +33,11 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - [x] Add `--diff` flag to show only what changed since last run ✅
 
 ### Improved Type Detection
-- [ ] Detect email addresses, URLs, phone numbers
-- [ ] Recognise enum-like fields (limited set of values)
-- [ ] Detect nullable vs truly optional fields
-- [ ] Identify computed/derived fields (e.g., always matches pattern)
-- [ ] Support custom type patterns via config
+- [x] Detect email addresses, URLs, phone numbers ✅
+- [x] Recognise enum-like fields (limited set of values) ✅
+- [x] Detect nullable vs truly optional fields ✅
+- [x] Identify computed/derived fields (e.g., always matches pattern) ✅
+- [x] Support custom type patterns via config ✅
 
 ### Documentation Quality
 - [ ] Add property descriptions from inline comments (if using a schema source)
@@ -223,6 +224,7 @@ These are smaller improvements that add value without major architectural change
 | 1.2 | HTML & ERDs | HTML output with search, Mermaid ERD diagrams | ✅ Complete |
 | 1.3 | Confidence | Relationship confidence scoring, cardinality analysis, validation | ✅ Complete |
 | 1.4 | Change Detection | Schema versioning, diff reports, breaking change detection | ✅ Complete |
+| 1.5 | Type Detection | Email/URL/phone detection, enum fields, nullable tracking, custom patterns | ✅ Complete |
 | 2.0 | CI/CD | Pipeline integration, exit codes, auto-commit | Planned |
 | 3.0 | Analysis | Data quality metrics, recommendations | Planned |
 | 4.0 | Interactive | Web UI, visual exploration | Planned |

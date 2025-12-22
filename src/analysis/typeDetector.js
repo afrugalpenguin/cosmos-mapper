@@ -9,12 +9,30 @@ const GUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 // ISO 8601 datetime patterns
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?)?$/;
 
+// Email pattern (simplified RFC 5322)
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// URL pattern (HTTP/HTTPS)
+const URL_REGEX = /^https?:\/\/[^\s]+$/i;
+
+// Phone number patterns (common formats)
+// International: +1 234 567 8901, +44 20 1234 5678
+// US formats: (123) 456-7890, 123-456-7890, 123.456.7890
+// Must have clear phone formatting, not just digits
+const PHONE_PATTERNS = [
+  /^\+\d[\d\s\-\.]{7,18}$/,                    // International: +1234567890, +1 234-567-8901
+  /^\(\d{2,4}\)\s*\d{3,4}[\s\-\.]\d{3,4}$/,   // (123) 456-7890, (0123) 456 7890
+  /^\d{3}[\-\.]\d{3}[\-\.]\d{4}$/,            // 123-456-7890, 123.456.7890
+  /^\d{4,5}[\s\-\.]\d{6,7}$/                  // UK style: 01onal 123456
+];
+
 /**
  * Detects the type of a value.
  * @param {any} value - The value to detect type for
+ * @param {Array} customPatterns - Optional custom patterns from config
  * @returns {string} The detected type
  */
-export function detectType(value) {
+export function detectType(value, customPatterns = []) {
   if (value === null) {
     return 'null';
   }
@@ -38,7 +56,7 @@ export function detectType(value) {
   }
 
   if (jsType === 'string') {
-    return detectStringType(value);
+    return detectStringType(value, customPatterns);
   }
 
   if (jsType === 'object') {
@@ -50,13 +68,15 @@ export function detectType(value) {
 
 /**
  * Detects specific types within string values.
+ * @param {string} value - The string value to analyze
+ * @param {Array} customPatterns - Optional custom patterns from config
  */
-function detectStringType(value) {
+function detectStringType(value, customPatterns = []) {
   if (value === '') {
     return 'string';
   }
 
-  // Check for GUID
+  // Check for GUID first (most specific)
   if (GUID_REGEX.test(value)) {
     return 'guid';
   }
@@ -64,6 +84,35 @@ function detectStringType(value) {
   // Check for ISO datetime
   if (ISO_DATE_REGEX.test(value)) {
     return 'datetime';
+  }
+
+  // Check for email
+  if (EMAIL_REGEX.test(value)) {
+    return 'email';
+  }
+
+  // Check for URL
+  if (URL_REGEX.test(value)) {
+    return 'url';
+  }
+
+  // Check for phone number using specific patterns
+  for (const phonePattern of PHONE_PATTERNS) {
+    if (phonePattern.test(value)) {
+      return 'phone';
+    }
+  }
+
+  // Check custom patterns
+  for (const pattern of customPatterns) {
+    try {
+      const regex = new RegExp(pattern.pattern);
+      if (regex.test(value)) {
+        return pattern.name;
+      }
+    } catch (e) {
+      // Invalid regex, skip
+    }
   }
 
   return 'string';
@@ -116,8 +165,10 @@ function detectObjectPattern(obj) {
 
 /**
  * Gets a display-friendly type name.
+ * @param {string} type - The internal type name
+ * @param {Array} customPatterns - Optional custom patterns for display name lookup
  */
-export function getTypeDisplayName(type) {
+export function getTypeDisplayName(type, customPatterns = []) {
   const displayNames = {
     'DateTimeObject': 'DateTime',
     'ReferenceObject': 'Reference',
@@ -126,6 +177,9 @@ export function getTypeDisplayName(type) {
     'SimpleReference': 'Reference',
     'guid': 'GUID',
     'datetime': 'DateTime',
+    'email': 'Email',
+    'url': 'URL',
+    'phone': 'Phone',
     'integer': 'Integer',
     'number': 'Number',
     'boolean': 'Boolean',
@@ -134,6 +188,12 @@ export function getTypeDisplayName(type) {
     'object': 'Object',
     'null': 'Null'
   };
+
+  // Check if type matches a custom pattern
+  const customPattern = customPatterns.find(p => p.name === type);
+  if (customPattern && customPattern.displayName) {
+    return customPattern.displayName;
+  }
 
   return displayNames[type] || type;
 }

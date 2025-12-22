@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-269%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-289%20passing-brightgreen)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](tests/)
 [![Azure Cosmos DB](https://img.shields.io/badge/Azure-Cosmos%20DB-0078D4)](https://azure.microsoft.com/services/cosmos-db/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/)
@@ -18,7 +18,9 @@ Automatically samples documents from your Cosmos DB containers, infers schemas, 
 ## Features
 
 - **Schema Inference**: Samples documents and infers property types, optionality, and patterns
-- **Type Detection**: Recognises GUIDs, dates, reference objects, lookup objects, and more
+- **Type Detection**: Recognises GUIDs, dates, emails, URLs, phones, enums, reference objects, and more
+- **Enum Detection**: Automatically identifies fields with limited unique values as enum types
+- **Nullable Tracking**: Distinguishes between required, nullable, optional, and sparse fields
 - **Relationship Detection**: Identifies foreign key-like relationships between containers
 - **Confidence Scoring**: Calculates confidence scores for detected relationships with optional data validation
 - **Cross-Database Support**: Detects relationships between containers across different databases
@@ -342,7 +344,7 @@ npm run test:run  # Single run
 npm run test:coverage  # With coverage report
 ```
 
-269 unit tests covering configuration, type detection, schema inference, relationship detection, confidence scoring, schema versioning, and output generation.
+289 unit tests covering configuration, type detection, schema inference, relationship detection, confidence scoring, schema versioning, and output generation.
 
 ## Demo with Cosmos DB Emulator
 
