@@ -180,7 +180,7 @@ These are smaller improvements that add value without major architectural change
 - [ ] Copy-to-clipboard for Mermaid diagrams
 - [x] Validate config/connection before sampling ✅
 - [ ] Better error messages with troubleshooting hints
-- [x] Comprehensive test suite (196 tests, 95% coverage) ✅
+- [x] Comprehensive test suite (289 tests, 95% coverage) ✅
 
 ---
 
