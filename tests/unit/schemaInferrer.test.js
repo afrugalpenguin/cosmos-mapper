@@ -339,4 +339,135 @@ describe('schemaInferrer', () => {
       expect(children[1].name).toBe('zebra');
     });
   });
+
+  describe('enum detection', () => {
+    it('should detect enum fields with limited unique values', () => {
+      const docs = [
+        { status: 'pending' },
+        { status: 'active' },
+        { status: 'pending' },
+        { status: 'completed' },
+        { status: 'active' },
+        { status: 'pending' },
+        { status: 'active' },
+        { status: 'completed' },
+        { status: 'pending' },
+        { status: 'active' }
+      ];
+      const schema = inferSchema(docs);
+
+      expect(schema.properties.status.isEnum).toBe(true);
+      expect(schema.properties.status.enumValues).toContain('pending');
+      expect(schema.properties.status.enumValues).toContain('active');
+      expect(schema.properties.status.enumValues).toContain('completed');
+    });
+
+    it('should not detect enum for fields with many unique values', () => {
+      const docs = Array.from({ length: 20 }, (_, i) => ({ name: `User ${i}` }));
+      const schema = inferSchema(docs);
+
+      expect(schema.properties.name.isEnum).toBeFalsy();
+    });
+
+    it('should not detect enum for low frequency fields', () => {
+      const docs = [
+        { status: 'active' },
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+      ];
+      const schema = inferSchema(docs);
+
+      // frequency is 0.1, below 0.8 threshold
+      expect(schema.properties.status.isEnum).toBeFalsy();
+    });
+  });
+
+  describe('nullable detection', () => {
+    it('should track null count for properties', () => {
+      const docs = [
+        { value: 'test' },
+        { value: null },
+        { value: 'test2' },
+        { value: null }
+      ];
+      const schema = inferSchema(docs);
+
+      expect(schema.properties.value.nullCount).toBe(2);
+      expect(schema.properties.value.isNullable).toBe(true);
+    });
+
+    it('should set optionality to nullable for high-frequency nullable fields', () => {
+      const docs = Array.from({ length: 100 }, (_, i) => ({
+        value: i % 10 === 0 ? null : 'test'
+      }));
+      const schema = inferSchema(docs);
+
+      expect(schema.properties.value.optionality).toBe('nullable');
+    });
+
+    it('should set optionality to required for non-nullable fields', () => {
+      const docs = Array.from({ length: 100 }, () => ({ value: 'test' }));
+      const schema = inferSchema(docs);
+
+      expect(schema.properties.value.optionality).toBe('required');
+    });
+
+    it('should set optionality to optional for low-frequency fields', () => {
+      const docs = [
+        { name: 'test' },
+        { name: 'test2' },
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+      ];
+      const schema = inferSchema(docs);
+
+      expect(schema.properties.name.optionality).toBe('optional');
+    });
+
+    it('should set optionality to sparse for rarely-present fields', () => {
+      const docs = [
+        { rare: 'value' },
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {},
+        {}
+      ];
+      const schema = inferSchema(docs);
+
+      expect(schema.properties.rare.optionality).toBe('sparse');
+    });
+  });
 });

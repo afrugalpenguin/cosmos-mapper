@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-269%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-289%20passing-brightgreen)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](tests/)
 [![Azure Cosmos DB](https://img.shields.io/badge/Azure-Cosmos%20DB-0078D4)](https://azure.microsoft.com/services/cosmos-db/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/)
@@ -18,7 +18,9 @@ Automatically samples documents from your Cosmos DB containers, infers schemas, 
 ## Features
 
 - **Schema Inference**: Samples documents and infers property types, optionality, and patterns
-- **Type Detection**: Recognises GUIDs, dates, reference objects, lookup objects, and more
+- **Type Detection**: Recognises GUIDs, dates, emails, URLs, phones, enums, reference objects, and more
+- **Enum Detection**: Automatically identifies fields with limited unique values as enum types
+- **Nullable Tracking**: Distinguishes between required, nullable, optional, and sparse fields
 - **Relationship Detection**: Identifies foreign key-like relationships between containers
 - **Confidence Scoring**: Calculates confidence scores for detected relationships with optional data validation
 - **Cross-Database Support**: Detects relationships between containers across different databases
@@ -76,6 +78,14 @@ For more advanced configuration, create a `cosmosmapper.config.json` file:
     "exclude": ["*-archive", "*-backup", "test-*"]
   },
   "formats": ["markdown", "html"],
+  "typeDetection": {
+    "customPatterns": [],
+    "enumDetection": {
+      "enabled": true,
+      "maxUniqueValues": 10,
+      "minFrequency": 0.8
+    }
+  },
   "validation": {
     "enabled": false,
     "sampleSize": 1000
@@ -91,6 +101,10 @@ For more advanced configuration, create a `cosmosmapper.config.json` file:
 | `containers.include` | Glob patterns for containers to include | `[]` (all) |
 | `containers.exclude` | Glob patterns for containers to exclude | `[]` |
 | `formats` | Output formats: `markdown`, `html` | `["markdown", "html"]` |
+| `typeDetection.customPatterns` | Custom regex patterns for type detection | `[]` |
+| `typeDetection.enumDetection.enabled` | Enable enum field detection | `true` |
+| `typeDetection.enumDetection.maxUniqueValues` | Max unique values for enum | `10` |
+| `typeDetection.enumDetection.minFrequency` | Min field frequency for enum | `0.8` |
 | `validation.enabled` | Query data to validate relationships | `false` |
 | `validation.sampleSize` | FK values to sample for validation | `1000` |
 
@@ -145,20 +159,114 @@ output/
 
 ## Type Detection
 
-The tool detects and labels these types:
+CosmosMapper automatically detects and labels property types beyond basic JavaScript types.
 
-| Type | Detection |
-|------|-----------|
-| GUID | UUID format strings |
-| DateTime | ISO 8601 date strings |
-| DateTimeObject | `{ Value: "ISO string", Epoch: number }` |
-| ReferenceObject | `{ Id: "guid", Name: "string", Code: "string" }` |
-| LookupObject | `{ Id: number, Name: "string", Code: "string" }` |
-| Integer | Whole numbers |
-| Number | Decimal numbers |
-| Boolean | true/false |
-| Array | Arrays of any type |
-| Object | Nested objects |
+### Built-in Types
+
+| Type | Detection | Example |
+|------|-----------|---------|
+| GUID | UUID format strings | `550e8400-e29b-41d4-a716-446655440000` |
+| DateTime | ISO 8601 date strings | `2024-01-15T10:30:00Z` |
+| Email | Email address format | `user@example.com` |
+| URL | HTTP/HTTPS URLs | `https://example.com/path` |
+| Phone | Phone number formats | `+1-555-123-4567`, `(555) 123-4567` |
+| DateTimeObject | `{ Value: "ISO string", Epoch: number }` | Cosmos DB timestamp pattern |
+| ReferenceObject | `{ Id: "guid", Name: "string", Code: "string" }` | Embedded reference pattern |
+| LookupObject | `{ Id: number, Name: "string", Code: "string" }` | Lookup table reference |
+| Integer | Whole numbers | `42`, `-100` |
+| Number | Decimal numbers | `3.14`, `99.99` |
+| Boolean | true/false | `true` |
+| Array | Arrays of any type | `[1, 2, 3]` |
+| Object | Nested objects | `{ nested: "value" }` |
+
+### Custom Type Patterns
+
+Define custom regex patterns to detect domain-specific types like SKUs, product codes, or internal IDs.
+
+In `cosmosmapper.config.json`:
+
+```json
+{
+  "typeDetection": {
+    "customPatterns": [
+      {
+        "name": "sku",
+        "pattern": "^SKU-\\d{6}$",
+        "displayName": "SKU"
+      },
+      {
+        "name": "order-number",
+        "pattern": "^ORD-[A-Z]{2}-\\d{8}$",
+        "displayName": "Order Number"
+      },
+      {
+        "name": "employee-id",
+        "pattern": "^EMP\\d{5}$",
+        "displayName": "Employee ID"
+      }
+    ]
+  }
+}
+```
+
+| Property | Description | Required |
+|----------|-------------|----------|
+| `name` | Internal type name (used in schema) | Yes |
+| `pattern` | Regular expression pattern (escaped for JSON) | Yes |
+| `displayName` | Human-readable name shown in documentation | Yes |
+
+> **Note:** Custom patterns are checked **after** built-in patterns. If a value matches a built-in type (like GUID or email), it will be classified as that type rather than your custom pattern.
+
+### Enum Detection
+
+Fields with a limited set of unique values are automatically detected as enums:
+
+```json
+{
+  "typeDetection": {
+    "enumDetection": {
+      "enabled": true,
+      "maxUniqueValues": 10,
+      "minFrequency": 0.8
+    }
+  }
+}
+```
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `enabled` | Enable/disable enum detection | `true` |
+| `maxUniqueValues` | Maximum distinct values for enum classification | `10` |
+| `minFrequency` | Minimum field population rate (0-1) | `0.8` |
+
+Example: A `status` field with values `["pending", "shipped", "delivered"]` appearing in 90% of documents would be classified as an enum.
+
+### Field Optionality
+
+Properties are classified into four optionality levels:
+
+| Classification | Criteria | Meaning |
+|----------------|----------|---------|
+| **Required** | ≥95% present, never null | Always present with a value |
+| **Nullable** | ≥95% present, sometimes null | Always present, may be null |
+| **Optional** | 5-94% present | Sometimes missing entirely |
+| **Sparse** | <5% present | Rarely present |
+
+This helps distinguish between fields that are truly optional vs those that exist but can have null values.
+
+### Computed Field Detection
+
+Fields that match specific patterns across all samples are flagged as potentially computed/derived:
+
+| Pattern | Example | Detection |
+|---------|---------|-----------|
+| UUID v4 | `550e8400-e29b-41d4-a716-446655440000` | All values are valid UUIDs |
+| Prefixed ID | `USR-12345`, `ORD-67890` | Consistent `PREFIX-NUMBER` format |
+| Timestamp ID | `1703001234567` | 13-digit Unix timestamps |
+| Slug | `my-product-name` | URL-friendly lowercase with hyphens |
+| Hash | `a1b2c3d4e5f6...` | 32+ character hex strings |
+
+Computed fields are marked in the output with their detected pattern.
 
 ## Relationship Detection
 
@@ -342,7 +450,7 @@ npm run test:run  # Single run
 npm run test:coverage  # With coverage report
 ```
 
-269 unit tests covering configuration, type detection, schema inference, relationship detection, confidence scoring, schema versioning, and output generation.
+289 unit tests covering configuration, type detection, schema inference, relationship detection, confidence scoring, schema versioning, and output generation.
 
 ## Demo with Cosmos DB Emulator
 

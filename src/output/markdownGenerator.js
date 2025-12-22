@@ -273,18 +273,48 @@ async function generateContainerPage(containerName, dbName, schema, relationship
 function generatePropertyTable(schema) {
   const props = getRootProperties(schema.properties);
   const lines = [
-    '| Property | Type | Required | Example |',
-    '|----------|------|----------|---------|'
+    '| Property | Type | Status | Example | Notes |',
+    '|----------|------|--------|---------|-------|'
   ];
 
   for (const prop of props) {
     const type = formatTypes(prop.types);
-    const required = prop.isRequired ? 'Yes' : 'No';
+    const status = formatOptionality(prop);
     const example = formatExamples(prop.examples);
-    lines.push(`| ${prop.name} | ${type} | ${required} | ${example} |`);
+    const notes = formatNotes(prop);
+    lines.push(`| ${prop.name} | ${type} | ${status} | ${example} | ${notes} |`);
   }
 
   return lines.join('\n');
+}
+
+/**
+ * Formats the optionality status.
+ */
+function formatOptionality(prop) {
+  const optionality = prop.optionality || (prop.isRequired ? 'required' : 'optional');
+  switch (optionality) {
+    case 'required': return 'Required';
+    case 'nullable': return 'Nullable';
+    case 'optional': return 'Optional';
+    case 'sparse': return 'Sparse';
+    default: return prop.isRequired ? 'Yes' : 'No';
+  }
+}
+
+/**
+ * Formats notes for enum and computed fields.
+ */
+function formatNotes(prop) {
+  const notes = [];
+  if (prop.isEnum && prop.enumValues) {
+    const values = prop.enumValues.slice(0, 3).join(', ');
+    notes.push(`Enum: ${values}${prop.enumValues.length > 3 ? '...' : ''}`);
+  }
+  if (prop.isComputed) {
+    notes.push(`Computed (${prop.computedPattern})`);
+  }
+  return notes.length > 0 ? notes.join('; ') : '-';
 }
 
 /**
@@ -293,15 +323,16 @@ function generatePropertyTable(schema) {
 function generateNestedPropertyTable(schema, parentPath) {
   const props = getChildProperties(schema.properties, parentPath);
   const lines = [
-    '| Property | Type | Required | Example |',
-    '|----------|------|----------|---------|'
+    '| Property | Type | Status | Example | Notes |',
+    '|----------|------|--------|---------|-------|'
   ];
 
   for (const prop of props) {
     const type = formatTypes(prop.types);
-    const required = prop.isRequired ? 'Yes' : 'No';
+    const status = formatOptionality(prop);
     const example = formatExamples(prop.examples);
-    lines.push(`| ${prop.name} | ${type} | ${required} | ${example} |`);
+    const notes = formatNotes(prop);
+    lines.push(`| ${prop.name} | ${type} | ${status} | ${example} | ${notes} |`);
   }
 
   return lines.join('\n');

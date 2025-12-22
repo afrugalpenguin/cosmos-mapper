@@ -4,7 +4,7 @@
  */
 
 /**
- * @typedef {'ADDED'|'REMOVED'|'TYPE_CHANGED'|'OPTIONALITY_CHANGED'|'FREQUENCY_CHANGED'} PropertyChangeType
+ * @typedef {'ADDED'|'REMOVED'|'TYPE_CHANGED'|'OPTIONALITY_CHANGED'|'FREQUENCY_CHANGED'|'ENUM_VALUES_CHANGED'|'COMPUTED_CHANGED'} PropertyChangeType
  * @typedef {'RELATIONSHIP_ADDED'|'RELATIONSHIP_REMOVED'|'CARDINALITY_CHANGED'|'CONFIDENCE_CHANGED'} RelationshipChangeType
  * @typedef {'CONTAINER_ADDED'|'CONTAINER_REMOVED'} ContainerChangeType
  */
@@ -241,6 +241,73 @@ export function compareProperties(baselineProps, currentProps, container = '') {
           before: baseline,
           after: current,
           description: `Property '${path}' frequency changed from ${(baselineFreq * 100).toFixed(0)}% to ${(currentFreq * 100).toFixed(0)}%`
+        });
+      }
+
+      // Check optionality classification changes (required/nullable/optional/sparse)
+      const baselineOptionality = baseline.optionality || (baseline.isRequired ? 'required' : 'optional');
+      const currentOptionality = current.optionality || (current.isRequired ? 'required' : 'optional');
+
+      if (baselineOptionality !== currentOptionality && !changes.some(c => c.propertyPath === path && c.changeType === 'OPTIONALITY_CHANGED')) {
+        changes.push({
+          container,
+          propertyPath: path,
+          changeType: 'OPTIONALITY_CHANGED',
+          before: baseline,
+          after: current,
+          description: `Property '${path}' changed from ${baselineOptionality} to ${currentOptionality}`
+        });
+      }
+
+      // Check enum value changes
+      const baselineEnum = baseline.isEnum ? (baseline.enumValues || []).sort().join(',') : '';
+      const currentEnum = current.isEnum ? (current.enumValues || []).sort().join(',') : '';
+
+      if (baselineEnum !== currentEnum) {
+        if (!baseline.isEnum && current.isEnum) {
+          changes.push({
+            container,
+            propertyPath: path,
+            changeType: 'ENUM_VALUES_CHANGED',
+            before: baseline,
+            after: current,
+            description: `Property '${path}' is now detected as enum with values: ${current.enumValues?.join(', ')}`
+          });
+        } else if (baseline.isEnum && !current.isEnum) {
+          changes.push({
+            container,
+            propertyPath: path,
+            changeType: 'ENUM_VALUES_CHANGED',
+            before: baseline,
+            after: current,
+            description: `Property '${path}' is no longer an enum (had values: ${baseline.enumValues?.join(', ')})`
+          });
+        } else if (baseline.isEnum && current.isEnum) {
+          changes.push({
+            container,
+            propertyPath: path,
+            changeType: 'ENUM_VALUES_CHANGED',
+            before: baseline,
+            after: current,
+            description: `Property '${path}' enum values changed from [${baseline.enumValues?.join(', ')}] to [${current.enumValues?.join(', ')}]`
+          });
+        }
+      }
+
+      // Check computed field changes
+      const baselineComputed = baseline.isComputed || false;
+      const currentComputed = current.isComputed || false;
+
+      if (baselineComputed !== currentComputed || (baselineComputed && baseline.computedPattern !== current.computedPattern)) {
+        changes.push({
+          container,
+          propertyPath: path,
+          changeType: 'COMPUTED_CHANGED',
+          before: baseline,
+          after: current,
+          description: baselineComputed !== currentComputed
+            ? `Property '${path}' computed status changed: ${baselineComputed ? 'was computed' : 'not computed'} -> ${currentComputed ? 'now computed' : 'no longer computed'}`
+            : `Property '${path}' computed pattern changed from ${baseline.computedPattern} to ${current.computedPattern}`
         });
       }
     }

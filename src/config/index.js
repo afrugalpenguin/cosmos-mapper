@@ -20,6 +20,14 @@ const DEFAULT_CONFIG = {
     exclude: []       // Patterns to exclude (e.g., '*-archive')
   },
   formats: ['markdown', 'html'],
+  typeDetection: {
+    customPatterns: [],  // User-defined type patterns: { name, pattern, displayName }
+    enumDetection: {
+      enabled: true,      // Detect enum-like fields
+      maxUniqueValues: 10, // Max distinct values to be considered enum
+      minFrequency: 0.8   // Min occurrence rate
+    }
+  },
   validation: {
     enabled: false,   // Set true to query data for confidence scoring
     sampleSize: 1000, // FK values to sample for integrity check
@@ -251,6 +259,16 @@ export async function loadConfig(cliArgs = process.argv.slice(2)) {
     ...DEFAULT_CONFIG.versioning,
     ...fileConfig?.versioning,
     ...cli.versioning
+  };
+
+  config.typeDetection = {
+    ...DEFAULT_CONFIG.typeDetection,
+    ...fileConfig?.typeDetection,
+    customPatterns: fileConfig?.typeDetection?.customPatterns || DEFAULT_CONFIG.typeDetection.customPatterns,
+    enumDetection: {
+      ...DEFAULT_CONFIG.typeDetection.enumDetection,
+      ...fileConfig?.typeDetection?.enumDetection
+    }
   };
 
   // Copy versioning flags from CLI

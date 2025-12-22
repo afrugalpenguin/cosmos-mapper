@@ -7,6 +7,20 @@
     "exclude": ["*-archive", "*-backup", "test-*"]
   },
   "formats": ["markdown", "html"],
+  "typeDetection": {
+    "customPatterns": [
+      {
+        "name": "sku",
+        "pattern": "^SKU-\\d{6}$",
+        "displayName": "SKU"
+      }
+    ],
+    "enumDetection": {
+      "enabled": true,
+      "maxUniqueValues": 10,
+      "minFrequency": 0.8
+    }
+  },
   "validation": {
     "enabled": false,
     "sampleSize": 1000,
