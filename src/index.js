@@ -301,7 +301,7 @@ async function runAnalysis(config) {
     }
 
     if (config.formats.includes('html')) {
-      const htmlPath = await generateHtmlDocumentation(analysisData, config.output);
+      const htmlPath = await generateHtmlDocumentation(analysisData, config.output, config.branding);
       logger.item(`HTML report generated: ${htmlPath}`);
     }
 

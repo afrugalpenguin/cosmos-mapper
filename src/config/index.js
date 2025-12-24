@@ -27,6 +27,14 @@ const DEFAULT_CONFIG = {
     draft: '2020-12',       // JSON Schema draft version ('draft-07' or '2020-12')
     includeExamples: true   // Include example values in schema
   },
+  branding: {
+    logo: null,             // Path to logo image or URL
+    logoWidth: '150px',     // CSS width for logo
+    title: null,            // Custom page title (default: 'Cosmos DB Schema Documentation')
+    header: null,           // Custom HTML content for header area
+    footer: null,           // Custom HTML content for footer area
+    customCss: null         // Path to custom CSS file
+  },
   typeDetection: {
     customPatterns: [],  // User-defined type patterns: { name, pattern, displayName }
     enumDetection: {
@@ -125,6 +133,14 @@ function parseCliArgs(args = process.argv.slice(2)) {
     // Single container
     else if (arg === '--container' && args[i + 1]) {
       parsed.container = args[++i];
+    }
+    // Branding options
+    else if (arg === '--logo' && args[i + 1]) {
+      parsed.branding = { ...parsed.branding, logo: args[++i] };
+    } else if (arg === '--title' && args[i + 1]) {
+      parsed.branding = { ...parsed.branding, title: args[++i] };
+    } else if (arg === '--custom-css' && args[i + 1]) {
+      parsed.branding = { ...parsed.branding, customCss: args[++i] };
     }
   }
 
@@ -295,6 +311,12 @@ export async function loadConfig(cliArgs = process.argv.slice(2)) {
   config.jsonSchema = {
     ...DEFAULT_CONFIG.jsonSchema,
     ...fileConfig?.jsonSchema
+  };
+
+  config.branding = {
+    ...DEFAULT_CONFIG.branding,
+    ...fileConfig?.branding,
+    ...cli.branding
   };
 
   // Copy versioning flags from CLI
