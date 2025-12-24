@@ -174,5 +174,55 @@ describe('config', () => {
     it('should throw on invalid format', async () => {
       await expect(loadConfig(['--format', 'pdf'])).rejects.toThrow('invalid formats: pdf');
     });
+
+    it('should parse --quiet flag', async () => {
+      const config = await loadConfig(['--quiet']);
+      expect(config.logLevel).toBe('quiet');
+    });
+
+    it('should parse -q shorthand for quiet', async () => {
+      const config = await loadConfig(['-q']);
+      expect(config.logLevel).toBe('quiet');
+    });
+
+    it('should parse --verbose flag', async () => {
+      const config = await loadConfig(['--verbose']);
+      expect(config.logLevel).toBe('verbose');
+    });
+
+    it('should parse -v shorthand for verbose', async () => {
+      const config = await loadConfig(['-v']);
+      expect(config.logLevel).toBe('verbose');
+    });
+
+    it('should parse --watch flag', async () => {
+      const config = await loadConfig(['--watch']);
+      expect(config.watch).toBe(true);
+    });
+
+    it('should parse -w shorthand for watch', async () => {
+      const config = await loadConfig(['-w']);
+      expect(config.watch).toBe(true);
+    });
+
+    it('should parse --container flag', async () => {
+      const config = await loadConfig(['--container', 'orders']);
+      expect(config.container).toBe('orders');
+    });
+
+    it('should default logLevel to normal', async () => {
+      const config = await loadConfig([]);
+      expect(config.logLevel).toBe('normal');
+    });
+
+    it('should default watch to false', async () => {
+      const config = await loadConfig([]);
+      expect(config.watch).toBe(false);
+    });
+
+    it('should default container to null', async () => {
+      const config = await loadConfig([]);
+      expect(config.container).toBeNull();
+    });
   });
 });
