@@ -19,6 +19,7 @@ import { detectRelationships } from './analysis/relationships.js';
 import { calculateConfidenceBatch, getConfidenceStats } from './analysis/confidenceCalculator.js';
 import { generateDocumentation } from './output/markdownGenerator.js';
 import { generateHtmlDocumentation } from './output/htmlGenerator.js';
+import { generateJsonSchemas } from './output/jsonSchemaGenerator.js';
 import { logger } from './utils/logger.js';
 import { loadConfig, shouldIncludeContainer } from './config/index.js';
 import { saveSnapshot, loadSnapshot, getLatestSnapshot, pruneSnapshots } from './versioning/snapshotManager.js';
@@ -302,6 +303,11 @@ async function runAnalysis(config) {
     if (config.formats.includes('html')) {
       const htmlPath = await generateHtmlDocumentation(analysisData, config.output);
       logger.item(`HTML report generated: ${htmlPath}`);
+    }
+
+    if (config.formats.includes('jsonschema')) {
+      const schemaFiles = await generateJsonSchemas(analysisData, config.output, config.jsonSchema);
+      logger.item(`JSON Schema files generated: ${schemaFiles.length} schemas`);
     }
 
     logger.done(config.output);

@@ -23,6 +23,10 @@ const DEFAULT_CONFIG = {
   formats: ['markdown', 'html'],
   logLevel: 'normal', // 'quiet', 'normal', or 'verbose'
   watch: false,       // Watch mode for continuous regeneration
+  jsonSchema: {
+    draft: '2020-12',       // JSON Schema draft version ('draft-07' or '2020-12')
+    includeExamples: true   // Include example values in schema
+  },
   typeDetection: {
     customPatterns: [],  // User-defined type patterns: { name, pattern, displayName }
     enumDetection: {
@@ -215,7 +219,7 @@ function validateConfig(config) {
     errors.push('formats must be an array');
   }
 
-  const validFormats = ['markdown', 'html'];
+  const validFormats = ['markdown', 'html', 'jsonschema'];
   if (config.formats) {
     const invalidFormats = config.formats.filter(f => !validFormats.includes(f));
     if (invalidFormats.length > 0) {
@@ -286,6 +290,11 @@ export async function loadConfig(cliArgs = process.argv.slice(2)) {
       ...DEFAULT_CONFIG.typeDetection.enumDetection,
       ...fileConfig?.typeDetection?.enumDetection
     }
+  };
+
+  config.jsonSchema = {
+    ...DEFAULT_CONFIG.jsonSchema,
+    ...fileConfig?.jsonSchema
   };
 
   // Copy versioning flags from CLI
