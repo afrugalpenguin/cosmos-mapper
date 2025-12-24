@@ -639,6 +639,44 @@
             </div>
           </summary>
           <div class="p-4">
+            <!-- Container Configuration -->
+            <% const containerInfo = schema.containerInfo || {}; %>
+            <% const stats = schema.stats || {}; %>
+            <% if (containerInfo.partitionKey || stats.documentCount) { %>
+            <div class="mb-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              <% if (containerInfo.partitionKey?.length > 0) { %>
+              <div class="bg-gray-50 rounded-lg px-3 py-2">
+                <div class="text-xs font-medium text-gray-500 uppercase">Partition Key</div>
+                <div class="text-sm font-mono text-gray-900"><%= containerInfo.partitionKey.join(', ') %></div>
+              </div>
+              <% } %>
+              <% if (stats.documentCount !== undefined) { %>
+              <div class="bg-gray-50 rounded-lg px-3 py-2">
+                <div class="text-xs font-medium text-gray-500 uppercase">Documents</div>
+                <div class="text-sm text-gray-900">~<%= stats.documentCount?.toLocaleString() || 0 %></div>
+              </div>
+              <% } %>
+              <% if (stats.avgDocumentSizeBytes) { %>
+              <div class="bg-gray-50 rounded-lg px-3 py-2">
+                <div class="text-xs font-medium text-gray-500 uppercase">Avg Doc Size</div>
+                <div class="text-sm text-gray-900"><%= formatBytes(stats.avgDocumentSizeBytes) %></div>
+              </div>
+              <% } %>
+              <% if (stats.estimatedSizeBytes) { %>
+              <div class="bg-gray-50 rounded-lg px-3 py-2">
+                <div class="text-xs font-medium text-gray-500 uppercase">Est. Total Size</div>
+                <div class="text-sm text-gray-900"><%= formatBytes(stats.estimatedSizeBytes) %></div>
+              </div>
+              <% } %>
+              <% if (containerInfo.defaultTtl !== undefined && containerInfo.defaultTtl !== null) { %>
+              <div class="bg-gray-50 rounded-lg px-3 py-2">
+                <div class="text-xs font-medium text-gray-500 uppercase">Default TTL</div>
+                <div class="text-sm text-gray-900"><%= containerInfo.defaultTtl === -1 ? 'Disabled' : containerInfo.defaultTtl + 's' %></div>
+              </div>
+              <% } %>
+            </div>
+            <% } %>
+
             <!-- Properties Table -->
             <table class="min-w-full divide-y divide-gray-200 mb-4">
               <thead class="bg-gray-50">

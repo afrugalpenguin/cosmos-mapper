@@ -14,6 +14,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
+ * Formats byte count for display.
+ */
+function formatBytes(bytes) {
+  if (bytes === 0 || bytes === undefined) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
+}
+
+/**
  * Generates HTML documentation.
  * @param {object} data - Analysis results
  * @param {string} outputDir - Output directory path
@@ -76,7 +86,8 @@ export async function generateHtmlDocumentation(data, outputDir) {
     databaseSimpleERDs,
     // Helper functions
     getRootProperties,
-    getTypeDisplayName
+    getTypeDisplayName,
+    formatBytes
   });
 
   // Write the output file

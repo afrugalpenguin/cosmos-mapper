@@ -7,6 +7,7 @@ import { join } from 'path';
 import { getTypeDisplayName } from '../analysis/typeDetector.js';
 import { getRootProperties, getChildProperties } from '../analysis/schemaInferrer.js';
 import { generateERD, generateSimpleERD } from './mermaidGenerator.js';
+import { generateSampleQueries, formatQueriesAsMarkdown } from './queryGenerator.js';
 
 /**
  * Generates all documentation files.
@@ -195,18 +196,61 @@ async function generateContainerPage(containerName, dbName, schema, relationship
     !r.isOrphan
   );
 
+  const containerInfo = schema.containerInfo || {};
+  const stats = schema.stats || {};
+
   const lines = [
     `# ${containerName}`,
     '',
     `> Generated: ${timestamp}`,
     '',
     `**Database:** ${dbName}`,
-    '',
-    '## Schema',
-    '',
-    generatePropertyTable(schema),
     ''
   ];
+
+  // Container metadata section
+  lines.push('## Container Configuration');
+  lines.push('');
+  lines.push('| Setting | Value |');
+  lines.push('|---------|-------|');
+  lines.push(`| **Partition Key** | ${formatPartitionKey(containerInfo.partitionKey)} |`);
+  if (containerInfo.defaultTtl !== undefined) {
+    lines.push(`| **Default TTL** | ${formatTtl(containerInfo.defaultTtl)} |`);
+  }
+  if (containerInfo.uniqueKeyPolicy?.uniqueKeys?.length > 0) {
+    const uniqueKeys = containerInfo.uniqueKeyPolicy.uniqueKeys.map(k => k.paths.join(', ')).join('; ');
+    lines.push(`| **Unique Keys** | ${uniqueKeys} |`);
+  }
+  lines.push('');
+
+  // Stats section
+  if (stats.documentCount !== undefined) {
+    lines.push('## Data Volume');
+    lines.push('');
+    lines.push('| Metric | Value |');
+    lines.push('|--------|-------|');
+    lines.push(`| **Document Count** | ~${formatNumber(stats.documentCount)} |`);
+    lines.push(`| **Avg Document Size** | ${formatBytes(stats.avgDocumentSizeBytes)} |`);
+    lines.push(`| **Estimated Total Size** | ${formatBytes(stats.estimatedSizeBytes)} |`);
+    lines.push('');
+  }
+
+  // Indexing policy section
+  if (containerInfo.indexingPolicy) {
+    lines.push('<details>');
+    lines.push('<summary><strong>Indexing Policy</strong></summary>');
+    lines.push('');
+    lines.push(formatIndexingPolicy(containerInfo.indexingPolicy));
+    lines.push('');
+    lines.push('</details>');
+    lines.push('');
+  }
+
+  // Schema section
+  lines.push('## Schema');
+  lines.push('');
+  lines.push(generatePropertyTable(schema));
+  lines.push('');
 
   // Nested objects
   const nestedObjects = getNestedObjectPaths(schema);
@@ -260,6 +304,17 @@ async function generateContainerPage(containerName, dbName, schema, relationship
       }
       lines.push('');
     }
+  }
+
+  // Sample queries section
+  const sampleQueries = generateSampleQueries(containerName, schema);
+  if (sampleQueries.length > 0) {
+    lines.push('<details>');
+    lines.push('<summary><strong>Sample Queries</strong></summary>');
+    lines.push('');
+    lines.push(formatQueriesAsMarkdown(sampleQueries));
+    lines.push('</details>');
+    lines.push('');
   }
 
   lines.push('[← Back to Database Overview](./_overview.md) | [← Back to Index](../index.md)');
@@ -423,6 +478,96 @@ async function generateCrossDatabasePage(crossDbRels, outputDir, timestamp) {
   lines.push('[← Back to Index](./index.md)');
 
   await writeFile(join(outputDir, '_cross-database.md'), lines.join('\n'));
+}
+
+/**
+ * Formats partition key for display.
+ */
+function formatPartitionKey(paths) {
+  if (!paths || paths.length === 0) return '*None*';
+  return paths.map(p => `\`${p}\``).join(', ');
+}
+
+/**
+ * Formats TTL value for display.
+ */
+function formatTtl(ttl) {
+  if (ttl === -1) return 'Disabled';
+  if (ttl === undefined || ttl === null) return 'Not set';
+  if (ttl < 60) return `${ttl} seconds`;
+  if (ttl < 3600) return `${Math.round(ttl / 60)} minutes`;
+  if (ttl < 86400) return `${Math.round(ttl / 3600)} hours`;
+  return `${Math.round(ttl / 86400)} days`;
+}
+
+/**
+ * Formats byte count for display.
+ */
+function formatBytes(bytes) {
+  if (bytes === 0 || bytes === undefined) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
+}
+
+/**
+ * Formats a number with thousands separators.
+ */
+function formatNumber(num) {
+  if (num === undefined || num === null) return '0';
+  return num.toLocaleString();
+}
+
+/**
+ * Formats indexing policy for display.
+ */
+function formatIndexingPolicy(policy) {
+  if (!policy) return '*Not available*';
+
+  const lines = [];
+
+  lines.push(`**Mode:** ${policy.indexingMode || 'consistent'}`);
+  lines.push('');
+
+  if (policy.automatic !== undefined) {
+    lines.push(`**Automatic:** ${policy.automatic ? 'Yes' : 'No'}`);
+    lines.push('');
+  }
+
+  if (policy.includedPaths?.length > 0) {
+    lines.push('**Included Paths:**');
+    for (const path of policy.includedPaths) {
+      lines.push(`- \`${path.path}\``);
+    }
+    lines.push('');
+  }
+
+  if (policy.excludedPaths?.length > 0) {
+    lines.push('**Excluded Paths:**');
+    for (const path of policy.excludedPaths) {
+      lines.push(`- \`${path.path}\``);
+    }
+    lines.push('');
+  }
+
+  if (policy.compositeIndexes?.length > 0) {
+    lines.push('**Composite Indexes:**');
+    for (const composite of policy.compositeIndexes) {
+      const paths = composite.map(p => `${p.path} (${p.order})`).join(', ');
+      lines.push(`- ${paths}`);
+    }
+    lines.push('');
+  }
+
+  if (policy.spatialIndexes?.length > 0) {
+    lines.push('**Spatial Indexes:**');
+    for (const spatial of policy.spatialIndexes) {
+      lines.push(`- \`${spatial.path}\`: ${spatial.types?.join(', ') || 'all types'}`);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n');
 }
 
 /**
