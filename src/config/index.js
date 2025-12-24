@@ -15,11 +15,14 @@ const DEFAULT_CONFIG = {
   output: './output',
   sampleSize: 100,
   databases: [],      // Empty = all databases
+  container: null,    // Single container to document (--container flag)
   containers: {
     include: [],      // Empty = all containers
     exclude: []       // Patterns to exclude (e.g., '*-archive')
   },
   formats: ['markdown', 'html'],
+  logLevel: 'normal', // 'quiet', 'normal', or 'verbose'
+  watch: false,       // Watch mode for continuous regeneration
   typeDetection: {
     customPatterns: [],  // User-defined type patterns: { name, pattern, displayName }
     enumDetection: {
@@ -104,6 +107,20 @@ function parseCliArgs(args = process.argv.slice(2)) {
       parsed.diff = true;  // Implies diff mode
     } else if (arg === '--fail-on-breaking') {
       parsed.versioning = { ...parsed.versioning, failOnBreaking: true };
+    }
+    // Output control options
+    else if (arg === '--quiet' || arg === '-q') {
+      parsed.logLevel = 'quiet';
+    } else if (arg === '--verbose' || arg === '-v') {
+      parsed.logLevel = 'verbose';
+    }
+    // Watch mode
+    else if (arg === '--watch' || arg === '-w') {
+      parsed.watch = true;
+    }
+    // Single container
+    else if (arg === '--container' && args[i + 1]) {
+      parsed.container = args[++i];
     }
   }
 

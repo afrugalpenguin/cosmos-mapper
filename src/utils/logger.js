@@ -1,5 +1,6 @@
 /**
  * Simple logging utility with progress indication.
+ * Supports quiet mode (errors only) and verbose mode (debug info).
  */
 
 const COLORS = {
@@ -10,17 +11,53 @@ const COLORS = {
   yellow: '\x1b[33m',
   blue: '\x1b[34m',
   red: '\x1b[31m',
-  cyan: '\x1b[36m'
+  cyan: '\x1b[36m',
+  magenta: '\x1b[35m'
 };
+
+// Log levels
+const LEVELS = {
+  quiet: 0,   // Errors only
+  normal: 1,  // Standard output
+  verbose: 2  // Debug info
+};
+
+let currentLevel = LEVELS.normal;
 
 /**
  * Logger with formatted output.
  */
 export const logger = {
   /**
+   * Set the logging level
+   */
+  setLevel(level) {
+    if (level === 'quiet') currentLevel = LEVELS.quiet;
+    else if (level === 'verbose') currentLevel = LEVELS.verbose;
+    else currentLevel = LEVELS.normal;
+  },
+
+  /**
+   * Get current log level
+   */
+  getLevel() {
+    if (currentLevel === LEVELS.quiet) return 'quiet';
+    if (currentLevel === LEVELS.verbose) return 'verbose';
+    return 'normal';
+  },
+
+  /**
+   * Check if we should log at this level
+   */
+  shouldLog(level = LEVELS.normal) {
+    return currentLevel >= level;
+  },
+
+  /**
    * Prints the application header.
    */
   header(version = '1.0.0') {
+    if (!this.shouldLog()) return;
     console.log('');
     console.log(`${COLORS.bright}${COLORS.cyan}CosmosMapper v${version}${COLORS.reset}`);
     console.log(`${COLORS.dim}${'='.repeat(40)}${COLORS.reset}`);
@@ -31,6 +68,7 @@ export const logger = {
    * Logs an informational message.
    */
   info(message) {
+    if (!this.shouldLog()) return;
     console.log(`${COLORS.blue}ℹ${COLORS.reset} ${message}`);
   },
 
@@ -38,6 +76,7 @@ export const logger = {
    * Logs a success message.
    */
   success(message) {
+    if (!this.shouldLog()) return;
     console.log(`${COLORS.green}✓${COLORS.reset} ${message}`);
   },
 
@@ -45,15 +84,16 @@ export const logger = {
    * Logs a warning message.
    */
   warn(message) {
+    if (!this.shouldLog()) return;
     console.log(`${COLORS.yellow}⚠${COLORS.reset} ${message}`);
   },
 
   /**
-   * Logs an error message.
+   * Logs an error message. Always shown regardless of level.
    */
   error(message, error = null) {
     console.log(`${COLORS.red}✗${COLORS.reset} ${message}`);
-    if (error && process.env.DEBUG) {
+    if (error && (process.env.DEBUG || currentLevel === LEVELS.verbose)) {
       console.error(error);
     }
   },
@@ -62,6 +102,7 @@ export const logger = {
    * Logs a section header.
    */
   section(title) {
+    if (!this.shouldLog()) return;
     console.log('');
     console.log(`${COLORS.bright}${title}${COLORS.reset}`);
   },
@@ -70,6 +111,7 @@ export const logger = {
    * Logs a sub-item with indentation.
    */
   item(message, indent = 1) {
+    if (!this.shouldLog()) return;
     const prefix = '  '.repeat(indent) + '→';
     console.log(`${COLORS.dim}${prefix}${COLORS.reset} ${message}`);
   },
@@ -78,6 +120,7 @@ export const logger = {
    * Logs progress for a container.
    */
   container(name, docCount, status = 'ok') {
+    if (!this.shouldLog()) return;
     const statusIcon = status === 'ok'
       ? `${COLORS.green}✓${COLORS.reset}`
       : status === 'empty'
@@ -92,6 +135,7 @@ export const logger = {
    * Logs a summary statistic.
    */
   stat(label, value) {
+    if (!this.shouldLog()) return;
     console.log(`  ${COLORS.dim}${label}:${COLORS.reset} ${value}`);
   },
 
@@ -99,6 +143,7 @@ export const logger = {
    * Logs completion message.
    */
   done(outputPath) {
+    if (!this.shouldLog()) return;
     console.log('');
     console.log(`${COLORS.green}${COLORS.bright}Done!${COLORS.reset} Documentation generated in ${COLORS.cyan}${outputPath}${COLORS.reset}`);
     console.log('');
@@ -108,6 +153,22 @@ export const logger = {
    * Logs a blank line.
    */
   blank() {
+    if (!this.shouldLog()) return;
     console.log('');
+  },
+
+  /**
+   * Logs debug information (verbose mode only).
+   */
+  debug(message) {
+    if (currentLevel < LEVELS.verbose) return;
+    console.log(`${COLORS.magenta}[debug]${COLORS.reset} ${message}`);
+  },
+
+  /**
+   * Logs a watch mode notification.
+   */
+  watch(message) {
+    console.log(`${COLORS.cyan}[watch]${COLORS.reset} ${message}`);
   }
 };

@@ -27,25 +27,18 @@ import { classifyChanges } from './versioning/changeClassifier.js';
 import { formatDiffForConsole, generateDiffMarkdown } from './output/diffReportGenerator.js';
 
 /**
- * Main entry point.
+ * Run the analysis and generate documentation.
+ * Extracted to support watch mode re-runs.
  */
-async function main() {
-  logger.header();
-
-  // Load configuration
-  let config;
-  try {
-    config = await loadConfig();
-  } catch (error) {
-    logger.error(error.message);
-    process.exit(1);
-  }
+async function runAnalysis(config) {
+  logger.header('1.6');
 
   try {
     // Connect to Cosmos DB
     logger.info(`Connecting to Cosmos DB...`);
     const authType = config.key ? 'key-based' : 'Azure AD';
     logger.item(`Using ${authType} authentication`);
+    logger.debug(`Endpoint: ${config.endpoint}`);
 
     const client = createCosmosClient(config.endpoint, config.key);
 
@@ -77,7 +70,7 @@ async function main() {
 
     if (Object.keys(databasesToAnalyse).length === 0) {
       logger.error('No valid databases to analyse.');
-      process.exit(1);
+      return { exitCode: 1 };
     }
 
     // Discover containers in each database
@@ -85,14 +78,36 @@ async function main() {
 
     for (const [dbName, dbInfo] of Object.entries(databasesToAnalyse)) {
       const allDbContainers = await listContainers(client, dbName);
-      // Filter containers based on include/exclude patterns
-      const containers = allDbContainers.filter(c => shouldIncludeContainer(c, config));
+
+      // Apply --container filter if specified
+      let containers;
+      if (config.container) {
+        containers = allDbContainers.filter(c => c === config.container);
+        if (containers.length === 0) {
+          logger.debug(`Container '${config.container}' not found in ${dbName}`);
+        }
+      } else {
+        // Filter containers based on include/exclude patterns
+        containers = allDbContainers.filter(c => shouldIncludeContainer(c, config));
+      }
+
       dbInfo.containers = containers;
 
       if (containers.length < allDbContainers.length) {
         logger.item(`${dbName}: ${containers.length}/${allDbContainers.length} containers (filtered)`);
       } else {
         logger.item(`${dbName}: ${containers.length} containers`);
+      }
+      logger.debug(`Containers: ${containers.join(', ')}`);
+    }
+
+    // Check if --container was specified but not found anywhere
+    if (config.container) {
+      const totalContainers = Object.values(databasesToAnalyse)
+        .reduce((sum, db) => sum + db.containers.length, 0);
+      if (totalContainers === 0) {
+        logger.error(`Container '${config.container}' not found in any database.`);
+        return { exitCode: 1 };
       }
     }
 
@@ -116,6 +131,8 @@ async function main() {
 
       for (const containerName of dbInfo.containers) {
         try {
+          logger.debug(`Sampling ${containerName}...`);
+
           // Sample documents
           const documents = await sampleDocuments(client, dbName, containerName, config.sampleSize);
 
@@ -139,6 +156,7 @@ async function main() {
           allRelationships.push(...relationships);
 
           logger.container(containerName, documents.length, 'ok');
+          logger.debug(`Found ${Object.keys(schema.properties).length} properties, ${relationships.length} relationships`);
         } catch (error) {
           logger.container(containerName, 0, 'error');
           logger.error(`  Failed to analyse: ${error.message}`, error);
@@ -269,15 +287,69 @@ async function main() {
 
     logger.done(config.output);
 
-    // Exit with error if breaking changes detected and --fail-on-breaking
+    // Return exit code based on breaking changes
     if (config.versioning.failOnBreaking && comparison?.summary?.breakingChanges > 0) {
       logger.error(`Exiting with error: ${comparison.summary.breakingChanges} breaking change(s) detected.`);
-      process.exit(1);
+      return { exitCode: 1 };
     }
+
+    return { exitCode: 0 };
 
   } catch (error) {
     logger.error(`Fatal error: ${error.message}`, error);
+    return { exitCode: 1 };
+  }
+}
+
+/**
+ * Main entry point.
+ */
+async function main() {
+  // Load configuration
+  let config;
+  try {
+    config = await loadConfig();
+  } catch (error) {
+    logger.error(error.message);
     process.exit(1);
+  }
+
+  // Set log level based on config
+  logger.setLevel(config.logLevel);
+  logger.debug(`Log level: ${config.logLevel}`);
+  logger.debug(`Watch mode: ${config.watch}`);
+  logger.debug(`Container filter: ${config.container || 'none'}`);
+
+  // Watch mode
+  if (config.watch) {
+    logger.watch('Starting watch mode - press Ctrl+C to stop');
+    logger.watch('Watching for changes in Cosmos DB...');
+
+    // Initial run
+    await runAnalysis(config);
+
+    // Set up interval for periodic re-runs
+    const intervalMs = 30000; // 30 seconds
+    logger.watch(`Will re-check every ${intervalMs / 1000} seconds`);
+
+    const interval = setInterval(async () => {
+      logger.watch('Re-running analysis...');
+      await runAnalysis(config);
+    }, intervalMs);
+
+    // Handle Ctrl+C gracefully
+    process.on('SIGINT', () => {
+      logger.watch('Stopping watch mode...');
+      clearInterval(interval);
+      process.exit(0);
+    });
+
+    // Keep process alive
+    process.stdin.resume();
+  } else {
+    // Single run mode
+    const result = await runAnalysis(config);
+    process.exit(result.exitCode);
   }
 }
 

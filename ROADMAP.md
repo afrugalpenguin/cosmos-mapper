@@ -2,7 +2,7 @@
 
 A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB documentation and analysis tool.
 
-## Current Status (v1.5)
+## Current Status (v1.6)
 
 **Completed:**
 - Schema inference with type detection (GUIDs, dates, emails, URLs, phones, enums, reference objects, etc.)
@@ -17,7 +17,8 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - Container include/exclude patterns
 - **Schema versioning & change detection** (snapshots, diff, breaking change detection)
 - **Improved type detection** (email, URL, phone, enum, nullable, computed fields, custom patterns)
-- 289 unit tests with 95% coverage
+- **Quick wins bundle**: `--watch`, `--quiet`, `--verbose`, `--container` flags
+- 319 unit tests with 95% coverage
 
 ---
 
@@ -171,16 +172,16 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 
 These are smaller improvements that add value without major architectural changes:
 
-- [ ] `--watch` mode for continuous regeneration during development
+- [x] `--watch` mode for continuous regeneration during development ✅
 - [ ] Progress bar instead of dots during sampling
 - [ ] Container-level sampling size config (some containers need more samples)
-- [ ] Quiet mode for CI (`--quiet`)
-- [ ] Verbose mode for debugging (`--verbose`)
-- [ ] `--container` flag to document single container
+- [x] Quiet mode for CI (`--quiet`) ✅
+- [x] Verbose mode for debugging (`--verbose`) ✅
+- [x] `--container` flag to document single container ✅
 - [ ] Copy-to-clipboard for Mermaid diagrams
 - [x] Validate config/connection before sampling ✅
 - [ ] Better error messages with troubleshooting hints
-- [x] Comprehensive test suite (196 tests, 95% coverage) ✅
+- [x] Comprehensive test suite (319 tests, 95% coverage) ✅
 
 ---
 
@@ -200,7 +201,7 @@ These are smaller improvements that add value without major architectural change
 1. ~~Schema change detection (Phase 1)~~ ✅ Done
 2. ~~Config file support (Phase 3)~~ ✅ Done
 3. ~~HTML output with search (Phase 2)~~ ✅ Done
-4. `--watch` mode (Quick Win)
+4. ~~`--watch` mode (Quick Win)~~ ✅ Done
 
 ### High Impact, Higher Effort
 1. CI/CD pipeline integration (Phase 3)
@@ -225,6 +226,7 @@ These are smaller improvements that add value without major architectural change
 | 1.3 | Confidence | Relationship confidence scoring, cardinality analysis, validation | ✅ Complete |
 | 1.4 | Change Detection | Schema versioning, diff reports, breaking change detection | ✅ Complete |
 | 1.5 | Type Detection | Email/URL/phone detection, enum fields, nullable tracking, custom patterns | ✅ Complete |
+| 1.6 | Quick Wins | Watch mode, quiet/verbose modes, single container filter | ✅ Complete |
 | 2.0 | CI/CD | Pipeline integration, exit codes, auto-commit | Planned |
 | 3.0 | Analysis | Data quality metrics, recommendations | Planned |
 | 4.0 | Interactive | Web UI, visual exploration | Planned |

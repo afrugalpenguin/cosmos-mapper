@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-289%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-319%20passing-brightgreen)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](tests/)
 [![Azure Cosmos DB](https://img.shields.io/badge/Azure-Cosmos%20DB-0078D4)](https://azure.microsoft.com/services/cosmos-db/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/)
@@ -124,6 +124,7 @@ npm start -- --output ./docs --sample-size 50 --databases "db1,db2" --format mar
 | `--output <dir>` | Output directory |
 | `--sample-size <n>` | Documents to sample per container |
 | `--databases <list>` | Comma-separated database names |
+| `--container <name>` | Document only a single container |
 | `--format <list>` | Comma-separated output formats |
 | `--validate` | Enable relationship data validation |
 | `--no-validate` | Disable relationship data validation |
@@ -131,6 +132,9 @@ npm start -- --output ./docs --sample-size 50 --databases "db1,db2" --format mar
 | `--diff` | Compare against most recent snapshot |
 | `--diff-from <id>` | Compare against specific snapshot |
 | `--fail-on-breaking` | Exit with error code 1 if breaking changes found |
+| `--watch`, `-w` | Watch mode - re-run analysis every 30 seconds |
+| `--quiet`, `-q` | Quiet mode - only show errors (for CI/CD) |
+| `--verbose`, `-v` | Verbose mode - show debug information |
 
 ## Usage
 
@@ -450,7 +454,7 @@ npm run test:run  # Single run
 npm run test:coverage  # With coverage report
 ```
 
-289 unit tests covering configuration, type detection, schema inference, relationship detection, confidence scoring, schema versioning, and output generation.
+319 unit tests covering configuration, type detection, schema inference, relationship detection, confidence scoring, schema versioning, and output generation.
 
 ## Demo with Cosmos DB Emulator
 
