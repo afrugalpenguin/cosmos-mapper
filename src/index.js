@@ -32,7 +32,7 @@ import { formatDiffForConsole, generateDiffMarkdown } from './output/diffReportG
  * Extracted to support watch mode re-runs.
  */
 async function runAnalysis(config) {
-  logger.header('1.7');
+  logger.header('1.8');
 
   try {
     // Connect to Cosmos DB

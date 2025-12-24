@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org/)
-[![Tests](https://img.shields.io/badge/tests-329%20passing-brightgreen)](tests/)
+[![Tests](https://img.shields.io/badge/tests-362%20passing-brightgreen)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)](tests/)
 [![Azure Cosmos DB](https://img.shields.io/badge/Azure-Cosmos%20DB-0078D4)](https://azure.microsoft.com/services/cosmos-db/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/)
@@ -454,7 +454,7 @@ npm run test:run  # Single run
 npm run test:coverage  # With coverage report
 ```
 
-329 unit tests covering configuration, type detection, schema inference, relationship detection, confidence scoring, schema versioning, and output generation.
+362 unit tests covering configuration, type detection, schema inference, relationship detection, confidence scoring, schema versioning, and output generation.
 
 ## Demo with Cosmos DB Emulator
 
