@@ -64,7 +64,7 @@ export async function sampleDocuments(client, databaseName, containerName, limit
 }
 
 /**
- * Gets container metadata including partition key.
+ * Gets container metadata including partition key and indexing policy.
  * @returns {Promise<object>} Container properties
  */
 export async function getContainerInfo(client, databaseName, containerName) {
@@ -73,8 +73,49 @@ export async function getContainerInfo(client, databaseName, containerName) {
   return {
     id: resource.id,
     partitionKey: resource.partitionKey?.paths || [],
-    indexingProduct: resource.indexingProduct
+    indexingPolicy: resource.indexingPolicy || null,
+    defaultTtl: resource.defaultTtl,
+    uniqueKeyPolicy: resource.uniqueKeyPolicy || null
   };
+}
+
+/**
+ * Gets container statistics (document count, size).
+ * Note: These are approximate values from Cosmos DB.
+ * @returns {Promise<object>} Container statistics
+ */
+export async function getContainerStats(client, databaseName, containerName) {
+  const container = client.database(databaseName).container(containerName);
+
+  try {
+    // Get approximate count via aggregate query
+    const countQuery = { query: 'SELECT VALUE COUNT(1) FROM c' };
+    const { resources: countResult } = await container.items.query(countQuery).fetchAll();
+    const documentCount = countResult[0] || 0;
+
+    // Get sample documents to estimate average size
+    const sampleQuery = { query: 'SELECT * FROM c OFFSET 0 LIMIT 50' };
+    const { resources: samples } = await container.items.query(sampleQuery).fetchAll();
+
+    let avgDocumentSize = 0;
+    if (samples.length > 0) {
+      const totalSize = samples.reduce((sum, doc) => sum + JSON.stringify(doc).length, 0);
+      avgDocumentSize = Math.round(totalSize / samples.length);
+    }
+
+    return {
+      documentCount,
+      avgDocumentSizeBytes: avgDocumentSize,
+      estimatedSizeBytes: documentCount * avgDocumentSize
+    };
+  } catch (error) {
+    // Return zeros on error (e.g., empty container)
+    return {
+      documentCount: 0,
+      avgDocumentSizeBytes: 0,
+      estimatedSizeBytes: 0
+    };
+  }
 }
 
 /**

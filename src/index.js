@@ -13,7 +13,7 @@ import 'dotenv/config';
 if (process.env.COSMOS_ENDPOINT?.includes('localhost')) {
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 }
-import { createCosmosClient, listDatabases, listContainers, sampleDocuments, getContainerInfo } from './cosmos/client.js';
+import { createCosmosClient, listDatabases, listContainers, sampleDocuments, getContainerInfo, getContainerStats } from './cosmos/client.js';
 import { inferSchema } from './analysis/schemaInferrer.js';
 import { detectRelationships } from './analysis/relationships.js';
 import { calculateConfidenceBatch, getConfidenceStats } from './analysis/confidenceCalculator.js';
@@ -31,7 +31,7 @@ import { formatDiffForConsole, generateDiffMarkdown } from './output/diffReportG
  * Extracted to support watch mode re-runs.
  */
 async function runAnalysis(config) {
-  logger.header('1.6');
+  logger.header('1.7');
 
   try {
     // Connect to Cosmos DB
@@ -133,8 +133,12 @@ async function runAnalysis(config) {
         try {
           logger.debug(`Sampling ${containerName}...`);
 
-          // Sample documents
-          const documents = await sampleDocuments(client, dbName, containerName, config.sampleSize);
+          // Fetch container metadata and stats in parallel with sampling
+          const [documents, containerInfo, containerStats] = await Promise.all([
+            sampleDocuments(client, dbName, containerName, config.sampleSize),
+            getContainerInfo(client, dbName, containerName),
+            getContainerStats(client, dbName, containerName)
+          ]);
 
           if (documents.length === 0) {
             logger.container(containerName, 0, 'empty');
@@ -143,6 +147,19 @@ async function runAnalysis(config) {
 
           // Infer schema
           const schema = inferSchema(documents);
+
+          // Add container metadata to schema
+          schema.containerInfo = {
+            database: dbName,
+            partitionKey: containerInfo.partitionKey,
+            indexingPolicy: containerInfo.indexingPolicy,
+            defaultTtl: containerInfo.defaultTtl,
+            uniqueKeyPolicy: containerInfo.uniqueKeyPolicy
+          };
+
+          // Add stats
+          schema.stats = containerStats;
+
           const schemaKey = containerName; // Use simple name for cross-db matching
           containerSchemas[schemaKey] = schema;
 
@@ -157,6 +174,8 @@ async function runAnalysis(config) {
 
           logger.container(containerName, documents.length, 'ok');
           logger.debug(`Found ${Object.keys(schema.properties).length} properties, ${relationships.length} relationships`);
+          logger.debug(`Partition key: ${containerInfo.partitionKey.join(', ') || 'none'}`);
+          logger.debug(`Document count: ~${containerStats.documentCount}`);
         } catch (error) {
           logger.container(containerName, 0, 'error');
           logger.error(`  Failed to analyse: ${error.message}`, error);

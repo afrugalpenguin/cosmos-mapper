@@ -2,7 +2,7 @@
 
 A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB documentation and analysis tool.
 
-## Current Status (v1.6)
+## Current Status (v1.7)
 
 **Completed:**
 - Schema inference with type detection (GUIDs, dates, emails, URLs, phones, enums, reference objects, etc.)
@@ -18,7 +18,8 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - **Schema versioning & change detection** (snapshots, diff, breaking change detection)
 - **Improved type detection** (email, URL, phone, enum, nullable, computed fields, custom patterns)
 - **Quick wins bundle**: `--watch`, `--quiet`, `--verbose`, `--container` flags
-- 319 unit tests with 95% coverage
+- **Documentation quality**: partition key, indexing policy, data volume estimates, sample queries
+- 329 unit tests with 95% coverage
 
 ---
 
@@ -42,10 +43,10 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 
 ### Documentation Quality
 - [ ] Add property descriptions from inline comments (if using a schema source)
-- [ ] Generate sample queries for each container
-- [ ] Include partition key strategy documentation
-- [ ] Document indexing product per container
-- [ ] Add data volume estimates (doc count, average size)
+- [x] Generate sample queries for each container ✅
+- [x] Include partition key strategy documentation ✅
+- [x] Document indexing policy per container ✅
+- [x] Add data volume estimates (doc count, average size) ✅
 
 ---
 
@@ -227,6 +228,7 @@ These are smaller improvements that add value without major architectural change
 | 1.4 | Change Detection | Schema versioning, diff reports, breaking change detection | ✅ Complete |
 | 1.5 | Type Detection | Email/URL/phone detection, enum fields, nullable tracking, custom patterns | ✅ Complete |
 | 1.6 | Quick Wins | Watch mode, quiet/verbose modes, single container filter | ✅ Complete |
+| 1.7 | Doc Quality | Partition key, indexing policy, data volume, sample queries | ✅ Complete |
 | 2.0 | CI/CD | Pipeline integration, exit codes, auto-commit | Planned |
 | 3.0 | Analysis | Data quality metrics, recommendations | Planned |
 | 4.0 | Interactive | Web UI, visual exploration | Planned |
