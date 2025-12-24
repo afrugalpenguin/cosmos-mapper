@@ -2,7 +2,7 @@
 
 A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB documentation and analysis tool.
 
-## Current Status (v1.7)
+## Current Status (v1.8)
 
 **Completed:**
 - Schema inference with type detection (GUIDs, dates, emails, URLs, phones, enums, reference objects, etc.)
@@ -19,7 +19,9 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - **Improved type detection** (email, URL, phone, enum, nullable, computed fields, custom patterns)
 - **Quick wins bundle**: `--watch`, `--quiet`, `--verbose`, `--container` flags
 - **Documentation quality**: partition key, indexing policy, data volume estimates, sample queries
-- 329 unit tests with 95% coverage
+- **JSON Schema export** (`--format jsonschema`) with draft-07 and 2020-12 support
+- **HTML branding customization** (`--logo`, `--title`, `--custom-css`, custom header/footer)
+- 362 unit tests with 95% coverage
 
 ---
 
@@ -60,15 +62,15 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 - [ ] Confluence wiki format
 - [ ] Notion export
 - [ ] PDF generation (via HTML)
-- [ ] JSON schema export (for tooling integration)
+- [x] JSON schema export (for tooling integration) ✅
 - [ ] OpenAPI-style schema definitions
 
 ### Template System
 - [x] EJS template system for HTML output ✅
 - [ ] Customisable Markdown templates
-- [ ] Branding/styling options for HTML output
-- [ ] Custom header/footer content
-- [ ] Logo embedding in outputs
+- [x] Branding/styling options for HTML output ✅
+- [x] Custom header/footer content ✅
+- [x] Logo embedding in outputs ✅
 
 ---
 
@@ -229,6 +231,7 @@ These are smaller improvements that add value without major architectural change
 | 1.5 | Type Detection | Email/URL/phone detection, enum fields, nullable tracking, custom patterns | ✅ Complete |
 | 1.6 | Quick Wins | Watch mode, quiet/verbose modes, single container filter | ✅ Complete |
 | 1.7 | Doc Quality | Partition key, indexing policy, data volume, sample queries | ✅ Complete |
+| 1.8 | Phase 2 | JSON Schema export, HTML branding customization | ✅ Complete |
 | 2.0 | CI/CD | Pipeline integration, exit codes, auto-commit | Planned |
 | 3.0 | Analysis | Data quality metrics, recommendations | Planned |
 | 4.0 | Interactive | Web UI, visual exploration | Planned |

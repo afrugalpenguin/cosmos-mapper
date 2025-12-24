@@ -224,5 +224,40 @@ describe('config', () => {
       const config = await loadConfig([]);
       expect(config.container).toBeNull();
     });
+
+    it('should parse --logo flag', async () => {
+      const config = await loadConfig(['--logo', '/path/to/logo.png']);
+      expect(config.branding.logo).toBe('/path/to/logo.png');
+    });
+
+    it('should parse --title flag', async () => {
+      const config = await loadConfig(['--title', 'My Custom Title']);
+      expect(config.branding.title).toBe('My Custom Title');
+    });
+
+    it('should parse --custom-css flag', async () => {
+      const config = await loadConfig(['--custom-css', '/path/to/styles.css']);
+      expect(config.branding.customCss).toBe('/path/to/styles.css');
+    });
+
+    it('should have default branding config', async () => {
+      const config = await loadConfig([]);
+      expect(config.branding).toBeDefined();
+      expect(config.branding.logo).toBeNull();
+      expect(config.branding.title).toBeNull();
+      expect(config.branding.logoWidth).toBe('150px');
+    });
+
+    it('should have default jsonSchema config', async () => {
+      const config = await loadConfig([]);
+      expect(config.jsonSchema).toBeDefined();
+      expect(config.jsonSchema.draft).toBe('2020-12');
+      expect(config.jsonSchema.includeExamples).toBe(true);
+    });
+
+    it('should accept jsonschema as valid format', async () => {
+      const config = await loadConfig(['--format', 'jsonschema']);
+      expect(config.formats).toContain('jsonschema');
+    });
   });
 });

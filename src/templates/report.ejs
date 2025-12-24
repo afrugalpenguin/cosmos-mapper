@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cosmos DB Schema Documentation</title>
+  <title><%= branding.title %></title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/panzoom@9.4.3/dist/panzoom.min.js"></script>
@@ -205,6 +205,9 @@
       visibility: visible;
     }
   </style>
+  <% if (branding.customCss) { %>
+  <link rel="stylesheet" href="<%= branding.customCss %>">
+  <% } %>
 </head>
 <body class="bg-gray-50 min-h-screen">
   <!-- Header -->
@@ -218,13 +221,17 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
             </svg>
           </button>
+          <% if (branding.logo) { %>
+          <img src="<%= branding.logo %>" alt="Logo" style="width: <%= branding.logoWidth %>; max-height: 48px; object-fit: contain;" class="hidden sm:block">
+          <% } else { %>
           <div class="bg-white/10 p-2 rounded-lg hidden sm:block">
             <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
             </svg>
           </div>
+          <% } %>
           <div>
-            <h1 class="text-lg sm:text-xl font-bold">Cosmos DB Schema Documentation</h1>
+            <h1 class="text-lg sm:text-xl font-bold"><%= branding.title %></h1>
             <p class="text-cosmos-200 text-xs sm:text-sm hidden sm:block">Generated: <%= timestamp %></p>
           </div>
         </div>
@@ -252,6 +259,13 @@
       </div>
     </div>
   </header>
+
+  <% if (branding.header) { %>
+  <!-- Custom Header Content -->
+  <div class="bg-white border-b border-gray-200 px-4 py-3 sm:px-6 lg:px-8">
+    <%- branding.header %>
+  </div>
+  <% } %>
 
   <!-- Sidebar Overlay (mobile) -->
   <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
@@ -1174,5 +1188,12 @@
       }
     });
   </script>
+
+  <% if (branding.footer) { %>
+  <!-- Custom Footer Content -->
+  <footer class="bg-white border-t border-gray-200 px-4 py-4 sm:px-6 lg:px-8 mt-8">
+    <%- branding.footer %>
+  </footer>
+  <% } %>
 </body>
 </html>

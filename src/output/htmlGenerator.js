@@ -27,8 +27,9 @@ function formatBytes(bytes) {
  * Generates HTML documentation.
  * @param {object} data - Analysis results
  * @param {string} outputDir - Output directory path
+ * @param {object} branding - Optional branding configuration
  */
-export async function generateHtmlDocumentation(data, outputDir) {
+export async function generateHtmlDocumentation(data, outputDir, branding = {}) {
   const { databases, containerSchemas, relationships, timestamp } = data;
 
   // Ensure output directory exists
@@ -87,7 +88,16 @@ export async function generateHtmlDocumentation(data, outputDir) {
     // Helper functions
     getRootProperties,
     getTypeDisplayName,
-    formatBytes
+    formatBytes,
+    // Branding
+    branding: {
+      logo: branding.logo || null,
+      logoWidth: branding.logoWidth || '150px',
+      title: branding.title || 'Cosmos DB Schema Documentation',
+      header: branding.header || null,
+      footer: branding.footer || null,
+      customCss: branding.customCss || null
+    }
   });
 
   // Write the output file
