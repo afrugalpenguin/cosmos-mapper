@@ -444,6 +444,70 @@ npm start -- --diff --fail-on-breaking
 | `retention` | Number of unnamed snapshots to keep | `10` |
 | `failOnBreaking` | Exit with error on breaking changes | `false` |
 
+## GitHub Actions
+
+Use CosmosMapper in your CI/CD pipeline to automate schema documentation and detect breaking changes.
+
+### Quick Start
+
+```yaml
+- uses: afrugalpenguin/cosmos-mapper@v1
+  with:
+    cosmos-endpoint: ${{ secrets.COSMOS_ENDPOINT }}
+    cosmos-key: ${{ secrets.COSMOS_KEY }}
+```
+
+### PR Validation (Detect Breaking Changes)
+
+```yaml
+- uses: afrugalpenguin/cosmos-mapper@v1
+  with:
+    cosmos-endpoint: ${{ secrets.COSMOS_ENDPOINT }}
+    cosmos-key: ${{ secrets.COSMOS_KEY }}
+    diff: 'true'
+    fail-on-breaking: 'true'
+```
+
+### Generate Documentation
+
+```yaml
+- uses: afrugalpenguin/cosmos-mapper@v1
+  with:
+    cosmos-endpoint: ${{ secrets.COSMOS_ENDPOINT }}
+    cosmos-key: ${{ secrets.COSMOS_KEY }}
+    formats: 'markdown,html,jsonschema'
+    snapshot: 'main'
+
+- uses: actions/upload-artifact@v4
+  with:
+    name: cosmos-docs
+    path: ./cosmos-docs/
+```
+
+### Action Inputs
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `cosmos-endpoint` | Yes | - | Cosmos DB endpoint URL |
+| `cosmos-key` | No | - | Read-only key (omit for managed identity) |
+| `databases` | No | `''` | Comma-separated database names |
+| `output-dir` | No | `./cosmos-docs` | Output directory |
+| `formats` | No | `markdown,html` | Output formats |
+| `sample-size` | No | `100` | Documents to sample |
+| `diff` | No | `false` | Compare against previous snapshot |
+| `snapshot` | No | `''` | Save snapshot with this name |
+| `fail-on-breaking` | No | `false` | Exit 1 on breaking changes |
+| `validate` | No | `false` | Enable relationship validation |
+
+### Action Outputs
+
+| Output | Description |
+|--------|-------------|
+| `html-report` | Path to HTML report |
+| `has-breaking-changes` | `true` if breaking changes detected |
+
+See [.github/workflows/cosmosdb-docs.yml](.github/workflows/cosmosdb-docs.yml) for a complete example workflow.
+
 ## Testing
 
 Run the test suite:
