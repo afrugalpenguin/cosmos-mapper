@@ -80,10 +80,11 @@ A phased plan to evolve CosmosMapper from MVP to a comprehensive Cosmos DB docum
 
 ### Pipeline Support
 - [ ] Azure DevOps pipeline task/extension
-- [ ] GitHub Actions workflow template
-- [ ] Exit codes for schema drift detection (fail build on breaking changes)
+- [x] GitHub Actions workflow template ✅
+- [x] GitHub Actions composite action (`uses: afrugalpenguin/cosmos-mapper@v1`) ✅
+- [x] Exit codes for schema drift detection (`--fail-on-breaking`) ✅
 - [ ] Auto-commit documentation to wiki repos
-- [ ] PR comments with schema changes summary
+- [x] PR comments with schema changes summary (example workflow) ✅
 
 ### Configuration
 - [x] Config file support (`cosmosmapper.config.json`) ✅

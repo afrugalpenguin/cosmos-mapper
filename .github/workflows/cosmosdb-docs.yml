@@ -1,0 +1,187 @@
+# Example CosmosMapper workflow
+# Copy this file to your repository's .github/workflows/ directory
+#
+# This workflow demonstrates three common patterns:
+# 1. PR Validation - Check for breaking schema changes
+# 2. Documentation Generation - Generate docs on push to main
+# 3. Scheduled Baseline - Keep snapshots fresh with weekly runs
+
+name: Cosmos DB Documentation
+
+on:
+  # Pattern 1: PR validation
+  pull_request:
+    branches: [main]
+
+  # Pattern 2: Generate docs on push to main
+  push:
+    branches: [main]
+
+  # Pattern 3: Weekly baseline snapshot
+  schedule:
+    - cron: '0 0 * * 0'  # Every Sunday at midnight
+
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      snapshot-name:
+        description: 'Snapshot name (leave empty for auto-generated)'
+        required: false
+        type: string
+
+env:
+  # Store snapshots in git for baseline comparison
+  CACHE_DIR: .cosmoscache
+
+jobs:
+  # ===========================================
+  # Pattern 1: PR Validation
+  # Detect breaking schema changes before merge
+  # ===========================================
+  validate-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Restore cached snapshots for comparison
+      - name: Restore snapshot cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: cosmos-snapshots-${{ github.base_ref }}
+          restore-keys: |
+            cosmos-snapshots-
+
+      - name: Run CosmosMapper
+        id: cosmos
+        uses: afrugalpenguin/cosmos-mapper@v1
+        with:
+          cosmos-endpoint: ${{ secrets.COSMOS_ENDPOINT }}
+          cosmos-key: ${{ secrets.COSMOS_KEY }}
+          diff: 'true'
+          fail-on-breaking: 'true'
+        continue-on-error: true
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: cosmos-docs-pr-${{ github.event.number }}
+          path: ./cosmos-docs/
+          retention-days: 7
+
+      - name: Comment on PR if breaking changes
+        if: steps.cosmos.outputs.has-breaking-changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '⚠️ **Breaking Schema Changes Detected**\n\nThis PR introduces breaking changes to the Cosmos DB schema. Please review the [schema changes report](../actions/runs/${{ github.run_id }}) before merging.\n\nBreaking changes may affect downstream consumers.'
+            })
+
+      - name: Fail if breaking changes
+        if: steps.cosmos.outputs.has-breaking-changes == 'true'
+        run: exit 1
+
+  # ===========================================
+  # Pattern 2: Documentation Generation
+  # Generate and publish docs on push to main
+  # ===========================================
+  generate-docs:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore snapshot cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: cosmos-snapshots-main-${{ github.sha }}
+          restore-keys: |
+            cosmos-snapshots-main-
+            cosmos-snapshots-
+
+      - name: Run CosmosMapper
+        uses: afrugalpenguin/cosmos-mapper@v1
+        with:
+          cosmos-endpoint: ${{ secrets.COSMOS_ENDPOINT }}
+          cosmos-key: ${{ secrets.COSMOS_KEY }}
+          formats: 'markdown,html,jsonschema'
+          snapshot: 'main'
+          diff: 'true'
+
+      - name: Save snapshot cache
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: cosmos-snapshots-main-${{ github.sha }}
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: cosmos-documentation
+          path: ./cosmos-docs/
+          retention-days: 30
+
+      # Optional: Commit docs to a separate branch
+      # - name: Deploy to docs branch
+      #   uses: peaceiris/actions-gh-pages@v4
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     publish_dir: ./cosmos-docs
+      #     publish_branch: docs
+
+  # ===========================================
+  # Pattern 3: Scheduled Baseline
+  # Keep snapshots fresh for accurate comparisons
+  # ===========================================
+  scheduled-baseline:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore snapshot cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: cosmos-snapshots-main-${{ github.sha }}
+          restore-keys: |
+            cosmos-snapshots-main-
+            cosmos-snapshots-
+
+      - name: Generate snapshot name
+        id: snapshot-name
+        run: |
+          if [ -n "${{ github.event.inputs.snapshot-name }}" ]; then
+            echo "name=${{ github.event.inputs.snapshot-name }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=baseline-$(date +%Y%m%d)" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run CosmosMapper
+        uses: afrugalpenguin/cosmos-mapper@v1
+        with:
+          cosmos-endpoint: ${{ secrets.COSMOS_ENDPOINT }}
+          cosmos-key: ${{ secrets.COSMOS_KEY }}
+          snapshot: ${{ steps.snapshot-name.outputs.name }}
+          diff: 'true'
+
+      - name: Save snapshot cache
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.CACHE_DIR }}
+          key: cosmos-snapshots-main-${{ github.sha }}
+
+      - name: Upload baseline
+        uses: actions/upload-artifact@v4
+        with:
+          name: cosmos-baseline-${{ steps.snapshot-name.outputs.name }}
+          path: |
+            ./cosmos-docs/
+            ${{ env.CACHE_DIR }}/
+          retention-days: 90
