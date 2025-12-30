@@ -54,13 +54,13 @@ async function generateIndexPage(data, outputDir) {
   const { databases, containerSchemas, relationships, timestamp } = data;
 
   const lines = [
-    '# Cosmos DB Schema Documentation',
+    '# Cosmos DB Documentation',
     '',
     `> Generated: ${timestamp}`,
     '',
     '## Overview',
     '',
-    'This documentation describes the schema structure of the Cosmos DB databases.',
+    'This documentation describes the document structure of your Cosmos DB databases, inferred by sampling actual data.',
     '',
     '## Entity Relationship Diagram',
     '',

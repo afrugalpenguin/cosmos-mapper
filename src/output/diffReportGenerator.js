@@ -1,5 +1,5 @@
 /**
- * Generates schema change reports in various formats.
+ * Generates structure change reports in various formats.
  * Used to display diff results to users.
  */
 
@@ -18,7 +18,7 @@ export function formatDiffForConsole(comparison) {
   // Header
   lines.push('');
   lines.push('═══════════════════════════════════════════════════════════');
-  lines.push('                    SCHEMA CHANGE REPORT                    ');
+  lines.push('                  STRUCTURE CHANGE REPORT                   ');
   lines.push('═══════════════════════════════════════════════════════════');
   lines.push('');
 
@@ -114,7 +114,7 @@ export async function generateDiffMarkdown(comparison, metadata, outputDir) {
   const { summary } = comparison;
 
   // Header
-  lines.push('# Schema Change Report');
+  lines.push('# Structure Change Report');
   lines.push('');
 
   if (metadata.baselineId && metadata.currentTimestamp) {
@@ -143,7 +143,7 @@ export async function generateDiffMarkdown(comparison, metadata, outputDir) {
   if (breakingChanges.length > 0) {
     lines.push('## Breaking Changes');
     lines.push('');
-    lines.push('These changes may affect consumers of this schema:');
+    lines.push('These changes may affect consumers of this data:');
     lines.push('');
 
     for (const change of breakingChanges) {
@@ -194,12 +194,12 @@ export async function generateDiffMarkdown(comparison, metadata, outputDir) {
   if (summary.totalChanges === 0) {
     lines.push('## No Changes');
     lines.push('');
-    lines.push('No schema changes detected between the snapshots.');
+    lines.push('No structure changes detected between the snapshots.');
     lines.push('');
   }
 
   const content = lines.join('\n');
-  const filePath = join(outputDir, 'schema-changes.md');
+  const filePath = join(outputDir, 'structure-changes.md');
   await writeFile(filePath, content, 'utf8');
 
   return filePath;
@@ -226,7 +226,7 @@ export function generateDiffHtmlSection(comparison) {
         <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
         </svg>
-        Schema Changes Detected
+        Structure Changes Detected
         ${summary.breakingChanges > 0 ? `
         <span class="ml-2 px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700 rounded-full">
           ${summary.breakingChanges} breaking

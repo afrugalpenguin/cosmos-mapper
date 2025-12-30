@@ -11,13 +11,15 @@
 [![Azure Cosmos DB](https://img.shields.io/badge/Azure-Cosmos%20DB-0078D4)](https://azure.microsoft.com/services/cosmos-db/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/)
 
-Azure Cosmos DB schema documentation generator with ERD diagrams.
+Azure Cosmos DB documentation generator with ERD diagrams.
 
-Automatically samples documents from your Cosmos DB containers, infers schemas, detects relationships, and generates industry standard, wiki-compatible, Markdown documentation with Mermaid ERD diagrams.
+Automatically samples documents from your Cosmos DB containers, infers document structure, detects relationships, and generates industry standard, wiki-compatible, Markdown documentation with Mermaid ERD diagrams.
+
+> **Note:** Cosmos DB is a schemaless document database - it has no enforced schema. CosmosMapper works by sampling documents and inferring the structure from what it finds. The "structure" shown in generated documentation represents the patterns observed in your data, not a database-enforced contract.
 
 ## Features
 
-- **Schema Inference**: Samples documents and infers property types, optionality, and patterns
+- **Structure Discovery**: Samples documents and infers property types, optionality, and patterns
 - **Type Detection**: Recognises GUIDs, dates, emails, URLs, phones, enums, reference objects, and more
 - **Enum Detection**: Automatically identifies fields with limited unique values as enum types
 - **Nullable Tracking**: Distinguishes between required, nullable, optional, and sparse fields
@@ -124,11 +126,11 @@ npm start -- --output ./docs --sample-size 50 --databases "db1,db2" --format mar
 | `--output <dir>` | Output directory |
 | `--sample-size <n>` | Documents to sample per container |
 | `--databases <list>` | Comma-separated database names |
-| `--container <name>` | Document only a single container |
+| `--container <n>` | Document only a single container |
 | `--format <list>` | Comma-separated output formats |
 | `--validate` | Enable relationship data validation |
 | `--no-validate` | Disable relationship data validation |
-| `--snapshot [name]` | Save schema snapshot (optional custom name) |
+| `--snapshot [name]` | Save structure snapshot (optional custom name) |
 | `--diff` | Compare against most recent snapshot |
 | `--diff-from <id>` | Compare against specific snapshot |
 | `--fail-on-breaking` | Exit with error code 1 if breaking changes found |
@@ -151,7 +153,7 @@ output/
 ├── index.md                 # Main overview with ERD
 ├── ecommerce-store/
 │   ├── _overview.md         # Database ERD and container list
-│   ├── products.md          # Container schema details
+│   ├── products.md          # Container structure details
 │   ├── orders.md
 │   └── ...
 ├── ecommerce-platform/
@@ -215,7 +217,7 @@ In `cosmosmapper.config.json`:
 
 | Property | Description | Required |
 |----------|-------------|----------|
-| `name` | Internal type name (used in schema) | Yes |
+| `name` | Internal type name (used in structure output) | Yes |
 | `pattern` | Regular expression pattern (escaped for JSON) | Yes |
 | `displayName` | Human-readable name shown in documentation | Yes |
 
@@ -274,19 +276,34 @@ Computed fields are marked in the output with their detected pattern.
 
 ## Relationship Detection
 
-Relationships are detected from:
+CosmosMapper looks at your document properties and tries to figure out which containers reference each other. Here's how it works:
 
-- Properties ending in `Id` (e.g., `StoreId` → `stores`)
-- Properties ending in `_id` (e.g., `product_id` → `products`)
-- Nested objects with `Id` property (e.g., `Category.Id` → `categories`)
-- Reference pattern objects
+### What it looks for
 
-> **Note:** Unlike relational databases, Cosmos DB has no enforced foreign keys. Relationships shown in the ERD are **inferred from naming conventions**, not database constraints. Some detected relationships may be:
-> - Denormalised copies (embedded snapshots) rather than live references
-> - Pointing to containers with slightly different names than guessed
-> - Application-level conventions that don't represent true data relationships
->
-> Always verify critical relationships against your application code or domain knowledge.
+| Pattern | Example Property | Inferred Target |
+|---------|------------------|------------------|
+| Properties ending in `Id` | `StoreId` | `stores` container |
+| Properties ending in `_id` | `product_id` | `products` container |
+| Nested objects with `Id` | `Category.Id` | `categories` container |
+| Reference objects | `{ Id: "...", Name: "..." }` | Container matching the property name |
+
+### What it does with them
+
+When a relationship is detected, CosmosMapper:
+1. Draws a line in the ERD diagram connecting the two containers
+2. Shows the relationship in the container's documentation page
+3. Calculates a confidence score (see next section) to indicate how certain it is
+
+### Important limitations
+
+Cosmos DB is schemaless and has **no enforced foreign keys**. This means:
+
+- **These are educated guesses**, not database constraints
+- A `StoreId` property doesn't guarantee a `stores` container exists
+- Some "references" might actually be denormalised copies (embedded snapshots of data, not live links)
+- The tool guesses container names from property names, which might not always match
+
+**Always verify important relationships against your application code.**
 
 ## Relationship Confidence Scoring
 
@@ -367,13 +384,15 @@ In the HTML report, relationships display colour-coded confidence badges:
 
 Hover over any relationship badge to see a detailed summary of the confidence factors.
 
-## Schema Versioning & Change Detection
+## Structure Versioning & Change Detection
 
-CosmosMapper can track schema changes over time by saving snapshots and comparing them against future runs.
+CosmosMapper can track document structure changes over time by saving snapshots and comparing them against future runs.
+
+> **Important:** Since Cosmos DB is schemaless, these "snapshots" capture the **inferred structure** from sampled documents at a point in time - not a database schema. Changes detected represent shifts in the patterns found in your data.
 
 ### Saving Snapshots
 
-Save the current schema as a snapshot for future comparison:
+Save the current inferred structure as a snapshot for future comparison:
 
 ```bash
 # Save with auto-generated timestamp ID
@@ -386,9 +405,9 @@ npm start -- --snapshot pre-migration
 
 Snapshots are stored in `.cosmoscache/snapshots/` (configurable via `versioning.cacheDir`).
 
-### Comparing Schemas
+### Comparing Structures
 
-Compare the current schema against a previous snapshot:
+Compare the current structure against a previous snapshot:
 
 ```bash
 # Compare against the most recent snapshot
@@ -400,7 +419,7 @@ npm start -- --diff-from baseline
 
 This generates:
 - Console output showing added/removed/changed properties
-- `schema-changes.md` report in the output directory
+- `structure-changes.md` report in the output directory
 - Breaking changes highlighted with warnings
 
 ### Breaking vs Additive Changes
@@ -408,9 +427,9 @@ This generates:
 Changes are classified as:
 
 **Breaking (may affect consumers):**
-- Properties removed
+- Properties removed (no longer appearing in sampled documents)
 - Type narrowing (e.g., `string|number` → `string`)
-- Required → optional changes
+- Required → optional changes (field appearing less frequently)
 - Relationships removed
 
 **Additive (safe):**
@@ -446,7 +465,7 @@ npm start -- --diff --fail-on-breaking
 
 ## GitHub Actions
 
-Use CosmosMapper in your CI/CD pipeline to automate schema documentation and detect breaking changes.
+Use CosmosMapper in your CI/CD pipeline to automate documentation and detect breaking structure changes.
 
 ### Quick Start
 
@@ -518,7 +537,7 @@ npm run test:run  # Single run
 npm run test:coverage  # With coverage report
 ```
 
-362 unit tests covering configuration, type detection, schema inference, relationship detection, confidence scoring, schema versioning, and output generation.
+362 unit tests covering configuration, type detection, structure inference, relationship detection, confidence scoring, structure versioning, and output generation.
 
 ## Demo with Cosmos DB Emulator
 
