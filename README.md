@@ -506,7 +506,7 @@ Use CosmosMapper in your CI/CD pipeline to automate schema documentation and det
 | `html-report` | Path to HTML report |
 | `has-breaking-changes` | `true` if breaking changes detected |
 
-See [.github/workflows/cosmosdb-docs.yml](.github/workflows/cosmosdb-docs.yml) for a complete example workflow.
+See [examples/workflows/cosmosdb-docs.yml](examples/workflows/cosmosdb-docs.yml) for a complete example workflow.
 
 ## Testing
 
